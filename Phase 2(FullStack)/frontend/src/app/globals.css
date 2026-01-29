@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
+}
+
+body {
+  font-family: var(--font-inter);
+  background-color: #f8fafc;
+}
+
+/* Custom components */
+@layer components {
+  .btn-primary {
+    @apply bg-todo-primary hover:bg-todo-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-todo-secondary hover:bg-todo-secondary/90 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 shadow-sm;
+  }
+
+  .btn-outline {
+    @apply border-2 border-todo-primary text-todo-primary hover:bg-todo-primary hover:text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-todo-primary focus:border-transparent transition-colors duration-200;
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+  }
+
+  .task-item {
+    @apply flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200;
+  }
+
+  .task-title {
+    @apply text-lg font-medium text-gray-900;
+  }
+
+  .task-description {
+    @apply text-sm text-gray-600 mt-1;
+  }
+}

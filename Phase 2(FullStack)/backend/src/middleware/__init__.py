@@ -1,0 +1,1 @@
+"""Authentication middleware for JWT token validation."""
