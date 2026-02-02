@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth-context';
 import { useNotification } from '@/contexts/NotificationContext';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
-import { Task } from '@/types/task';
+import { Task, TaskPriority, TaskStatus } from '@/types/task';
+import { Button } from '@/components/ui/button';
+import { Plus, X } from 'lucide-react';
 
 export default function TaskList() {
   const { session } = useAuth();
@@ -13,8 +15,8 @@ export default function TaskList() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all');
-  const [priorityFilter, setPriorityFilter] = useState<number | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | TaskStatus>('all');
+  const [priorityFilter, setPriorityFilter] = useState<'all' | TaskPriority>('all');
 
   // Filter tasks based on selected filters
   const filteredTasks = tasks.filter(task => {
@@ -35,7 +37,7 @@ export default function TaskList() {
       setLoading(true);
       const response = await fetch(`/api/tasks`, {
         headers: {
-          'Authorization': `Bearer ${session?.accessToken}`,
+          'Authorization': `Bearer ${session?.token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -82,22 +84,37 @@ export default function TaskList() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold">Your Tasks</h2>
-        <button
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          Your Tasks
+          <span className="text-xs font-normal text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+            {filteredTasks.length}
+          </span>
+        </h2>
+        <Button
           onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          variant={showForm ? "outline" : "default"}
+          size="sm"
+          className="gap-2"
         >
-          {showForm ? 'Cancel' : 'Add Task'}
-        </button>
+          {showForm ? (
+            <>
+              <X className="h-4 w-4" /> Cancel
+            </>
+          ) : (
+            <>
+              <Plus className="h-4 w-4" /> Add Task
+            </>
+          )}
+        </Button>
       </div>
 
-      <div className="flex flex-wrap gap-4 bg-gray-50 p-3 rounded-md mb-4 border border-gray-200">
+      <div className="flex flex-wrap gap-4 bg-secondary/50 p-4 rounded-lg mb-6 border border-border">
         <div className="flex items-center space-x-2">
-          <label className="text-sm font-medium text-gray-700">Status:</label>
+          <label className="text-sm font-medium text-foreground">Status:</label>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="text-sm p-1 border border-gray-300 rounded-md"
+            className="text-sm p-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
           >
             <option value="all">All</option>
             <option value="pending">Pending</option>
@@ -106,18 +123,16 @@ export default function TaskList() {
           </select>
         </div>
         <div className="flex items-center space-x-2">
-          <label className="text-sm font-medium text-gray-700">Priority:</label>
+          <label className="text-sm font-medium text-foreground">Priority:</label>
           <select
             value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-            className="text-sm p-1 border border-gray-300 rounded-md"
+            onChange={(e) => setPriorityFilter(e.target.value as 'all' | TaskPriority)}
+            className="text-sm p-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
           >
             <option value="all">All</option>
-            <option value={1}>Low</option>
-            <option value={2}>Medium-Low</option>
-            <option value={3}>Medium</option>
-            <option value={4}>Medium-High</option>
-            <option value={5}>High</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
           </select>
         </div>
       </div>

@@ -11,65 +11,132 @@ module.exports = mod;
 __turbopack_context__.s([
     "AuthProvider",
     ()=>AuthProvider,
-    "default",
-    ()=>__TURBOPACK__default__export__,
+    "getAuthToken",
+    ()=>getAuthToken,
     "useAuth",
     ()=>useAuth
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react-jsx-dev-runtime.js [app-ssr] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$node_modules$2f$better$2d$auth$2f$dist$2f$client$2f$react$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__ = __turbopack_context__.i("[project]/frontend/node_modules/better-auth/dist/client/react/index.mjs [app-ssr] (ecmascript) <locals>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/node_modules/next/dist/server/route-modules/app-page/vendored/ssr/react.js [app-ssr] (ecmascript)");
 'use client';
 ;
 ;
-;
-// Initialize Better Auth client
-const authClient = (0, __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$node_modules$2f$better$2d$auth$2f$dist$2f$client$2f$react$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$locals$3e$__["createAuthClient"])({
-    baseURL: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
-    fetch: globalThis.fetch
-});
 // Create auth context
 const AuthContext = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["createContext"])(undefined);
 function AuthProvider({ children }) {
-    const [session, setSession] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(undefined);
+    const [session, setSession] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
     const [isLoading, setIsLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(true);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
-        // Get current session on component mount
-        const getSession = async ()=>{
+        // Check for stored token on mount
+        const checkAuth = ()=>{
             try {
-                const result = await authClient.getSession();
-                setSession(result?.data?.session || null);
+                const token = localStorage.getItem('auth_token');
+                const userStr = localStorage.getItem('auth_user');
+                if (token && userStr) {
+                    setSession({
+                        token,
+                        user: JSON.parse(userStr)
+                    });
+                } else {
+                    setSession(null);
+                }
             } catch (error) {
-                console.error('Error getting session:', error);
+                console.error('Error checking auth:', error);
                 setSession(null);
             } finally{
                 setIsLoading(false);
             }
         };
-        getSession();
-        // Listen for session changes
-        const unsubscribe = authClient.subscribe((event)=>{
-            if (event.event === 'SESSION_UPDATED') {
-                setSession(event.data.session);
-            } else if (event.event === 'SIGN_OUT') {
-                setSession(null);
+        checkAuth();
+    }, []);
+    const signIn = (0, __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async (email, password)=>{
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email,
+                    password
+                })
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                return {
+                    success: false,
+                    error: error.detail || 'Login failed'
+                };
             }
-        });
-        return ()=>unsubscribe();
+            const data = await response.json();
+            const newSession = {
+                token: data.access_token,
+                user: data.user
+            };
+            localStorage.setItem('auth_token', data.access_token);
+            localStorage.setItem('auth_user', JSON.stringify(data.user));
+            setSession(newSession);
+            return {
+                success: true
+            };
+        } catch (error) {
+            console.error('Sign in error:', error);
+            return {
+                success: false,
+                error: 'Network error'
+            };
+        }
+    }, []);
+    const signUp = (0, __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(async (email, password, name)=>{
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    name
+                })
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                return {
+                    success: false,
+                    error: error.detail || 'Registration failed'
+                };
+            }
+            // Auto sign-in after registration
+            return await signIn(email, password);
+        } catch (error) {
+            console.error('Sign up error:', error);
+            return {
+                success: false,
+                error: 'Network error'
+            };
+        }
+    }, [
+        signIn
+    ]);
+    const signOut = (0, __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])(()=>{
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
+        setSession(null);
     }, []);
     const value = {
         session,
         isLoading,
-        signIn: authClient.signIn,
-        signOut: authClient.signOut,
-        signUp: authClient.signUp
+        signIn,
+        signUp,
+        signOut
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(AuthContext.Provider, {
         value: value,
         children: children
     }, void 0, false, {
         fileName: "[project]/frontend/src/lib/auth.tsx",
-        lineNumber: 56,
+        lineNumber: 118,
         columnNumber: 10
     }, this);
 }
@@ -80,7 +147,11 @@ function useAuth() {
     }
     return context;
 }
-const __TURBOPACK__default__export__ = authClient;
+function getAuthToken() {
+    if ("TURBOPACK compile-time truthy", 1) return null;
+    //TURBOPACK unreachable
+    ;
+}
 }),
 "[project]/frontend/src/components/common/Notification.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
 "use strict";

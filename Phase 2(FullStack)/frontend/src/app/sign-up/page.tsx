@@ -1,13 +1,12 @@
 'use client';
 
-import { AuthProvider, useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth-context';
 import SignUpForm from '@/components/auth/SignUpForm';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Wrapper component to handle auth redirect
-function SignUpWrapper() {
-  const { session } = useAuth();
+export default function SignUpPage() {
+  const { session, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -17,18 +16,15 @@ function SignUpWrapper() {
     }
   }, [session, router]);
 
+  // Show loading state while checking auth
+  if (isLoading) {
+    return null;
+  }
+
   // Show sign up form if not authenticated
   if (session) {
     return null; // Redirecting...
   }
 
   return <SignUpForm />;
-}
-
-export default function SignUpPage() {
-  return (
-    <AuthProvider>
-      <SignUpWrapper />
-    </AuthProvider>
-  );
 }

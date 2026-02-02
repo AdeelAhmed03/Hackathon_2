@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth-context';
 
 export default function SignUpForm() {
   const [name, setName] = useState('');
@@ -15,29 +15,20 @@ export default function SignUpForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    try {
-      const result = await signUp('credentials', {
-        name,
-        email,
-        password,
-        redirect: false,
-      });
+    const result = await signUp(email, password, name);
 
-      if (result?.error) {
-        setError(result.error);
-      } else {
-        router.push('/dashboard');
-        router.refresh();
-      }
-    } catch (err) {
-      setError('An unexpected error occurred');
-      console.error(err);
+    if (result.success) {
+      router.push('/dashboard');
+      router.refresh();
+    } else {
+      setError(result.error || 'Sign up failed');
     }
   };
 

@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from typing import List
+from datetime import datetime
 from ..database.session import get_session
 from ..models.task import Task, TaskCreate, TaskUpdate, TaskRead, TaskStatus
 from ..services.task_service import calculate_next_due_date
@@ -31,8 +32,18 @@ def create_task(
     session: Session = Depends(get_session)
 ):
     """Create a new task for the current user."""
-    db_task = Task.model_validate(task)
-    db_task.owner_id = current_user.id
+    now = datetime.utcnow()
+    db_task = Task(
+        title=task.title,
+        description=task.description,
+        status=task.status,
+        priority=task.priority,
+        due_datetime=task.due_datetime,
+        recurrence_rule=task.recurrence_rule,
+        owner_id=current_user.id,
+        created_at=now,
+        updated_at=now
+    )
     session.add(db_task)
     session.commit()
     session.refresh(db_task)

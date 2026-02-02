@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth-context';
 
 export default function SignInForm() {
   const [email, setEmail] = useState('');
@@ -13,23 +13,15 @@ export default function SignInForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
 
-    try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
+    const result = await signIn(email, password);
 
-      if (result?.error) {
-        setError(result.error);
-      } else {
-        router.push('/dashboard');
-        router.refresh();
-      }
-    } catch (err) {
-      setError('An unexpected error occurred');
-      console.error(err);
+    if (result.success) {
+      router.push('/dashboard');
+      router.refresh();
+    } else {
+      setError(result.error || 'Sign in failed');
     }
   };
 

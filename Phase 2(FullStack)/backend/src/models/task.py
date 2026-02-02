@@ -4,7 +4,8 @@ from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime
 from enum import Enum
-from sqlalchemy import Column, TIMESTAMP
+from sqlalchemy import Column, TIMESTAMP, ForeignKey
+from sqlalchemy.orm import relationship
 from .tag import TaskTagLink
 from .user import User
 
@@ -57,9 +58,7 @@ class Task(TaskBase, table=True):
     owner: "User" = Relationship(back_populates="tasks")
     tags: List["Tag"] = Relationship(back_populates="tasks", link_model=TaskTagLink)
 
-    # Self-referencing relationships
-    recurrence_parent: Optional["Task"] = Relationship(back_populates="recurrence_children")
-    recurrence_children: List["Task"] = Relationship(back_populates="recurrence_parent")
+    # Self-referencing relationship removed for now - can be queried by recurrence_parent_id if needed
 
 class TaskCreate(TaskBase):
     """Schema for creating a new task."""

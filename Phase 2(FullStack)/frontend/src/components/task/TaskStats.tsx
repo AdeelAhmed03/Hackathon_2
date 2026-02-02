@@ -1,6 +1,10 @@
+"use client";
+
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth-context';
 import { Task } from '@/types/task';
+import { motion } from 'framer-motion';
+import { CheckCircle2, Clock, AlertCircle, List } from 'lucide-react';
 
 export default function TaskStats() {
   const { session } = useAuth();
@@ -21,7 +25,7 @@ export default function TaskStats() {
     try {
       const response = await fetch('/api/tasks', {
         headers: {
-          'Authorization': `Bearer ${session?.accessToken}`,
+          'Authorization': `Bearer ${session?.token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -46,44 +50,58 @@ export default function TaskStats() {
     }
   };
 
-  return (
-    <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
-      <h2 className="text-lg font-semibold mb-4">Statistics</h2>
-      <div className="space-y-4">
-        <div className="flex justify-between">
-          <span className="text-gray-600">Total Tasks</span>
-          <span className="font-medium">{stats.total}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-600">Completed</span>
-          <span className="font-medium text-green-600">{stats.completed}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-600">Pending</span>
-          <span className="font-medium text-red-600">{stats.pending}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-600">In Progress</span>
-          <span className="font-medium text-yellow-600">{stats.inProgress}</span>
-        </div>
+  const statItems = [
+    { label: 'Total Tasks', value: stats.total, color: 'bg-primary/10 text-primary', icon: List },
+    { label: 'Completed', value: stats.completed, color: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle2 },
+    { label: 'Pending', value: stats.pending, color: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400', icon: AlertCircle },
+    { label: 'In Progress', value: stats.inProgress, color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400', icon: Clock },
+  ];
 
-        {stats.total > 0 && (
-          <div className="pt-4 border-t border-gray-200">
-            <div className="text-sm text-gray-600 mb-1">Completion Rate</div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-green-600 h-2 rounded-full"
-                style={{
-                  width: `${stats.total > 0 ? (stats.completed / stats.total) * 100 : 0}%`
-                }}
-              ></div>
+  return (
+    <div className="bg-card rounded-xl shadow-sm border border-border p-6 sticky top-24">
+      <h2 className="text-lg font-semibold mb-6 flex items-center">
+        <div className="h-6 w-1 bg-primary rounded-full mr-3"></div>
+        Statistics
+      </h2>
+
+      <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
+        {statItems.map((item, index) => (
+          <motion.div
+            key={item.label}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="flex items-center p-3 rounded-lg hover:bg-accent/50 transition-colors"
+          >
+            <div className={`p-2 rounded-lg ${item.color} mr-4`}>
+              <item.icon className="h-5 w-5" />
             </div>
-            <div className="text-right text-sm text-gray-600 mt-1">
-              {stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%
+            <div>
+              <p className="text-sm text-muted-foreground">{item.label}</p>
+              <p className="text-xl font-bold">{item.value}</p>
             </div>
-          </div>
-        )}
+          </motion.div>
+        ))}
       </div>
+
+      {stats.total > 0 && (
+        <div className="mt-6 pt-6 border-t border-border">
+          <div className="flex justify-between items-end mb-2">
+             <div className="text-sm text-muted-foreground">Completion Rate</div>
+             <div className="text-lg font-bold text-primary">
+                {Math.round((stats.completed / stats.total) * 100)}%
+             </div>
+          </div>
+          <div className="w-full bg-secondary rounded-full h-2.5 overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${(stats.completed / stats.total) * 100}%` }}
+              transition={{ duration: 1, ease: 'easeOut' }}
+              className="bg-primary h-2.5 rounded-full"
+            ></motion.div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
