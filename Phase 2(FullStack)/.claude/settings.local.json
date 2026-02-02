@@ -73,7 +73,11 @@
       "Bash(start http://localhost:3000)",
       "Bash(powershell -Command:*)",
       "Bash(cmd /c \"type C:\\\\Users\\\\ADEELA~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\F--Governor-House-GIAIC-s-Quarter-4-Hackathon-Projects-Hackathon-2-Phase-2-FullStack-\\\\tasks\\\\b487bce.output\")",
-      "Bash(del \"frontend\\\\.next\\\\dev\\\\lock\")"
+      "Bash(del \"frontend\\\\.next\\\\dev\\\\lock\")",
+      "Bash(find:*)",
+      "mcp__vercel__list_teams",
+      "mcp__vercel__list_projects",
+      "mcp__vercel__deploy_to_vercel"
     ]
   }
 }

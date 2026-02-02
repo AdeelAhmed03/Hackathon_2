@@ -1,5 +1,8 @@
-import { AuthProvider } from '@/lib/auth';
+import { AuthProvider } from '@/lib/auth-context';
 import { NotificationProvider } from '@/contexts/NotificationContext';
+import { ThemeProvider } from '@/components/common/ThemeProvider';
+import Navbar from '@/components/common/Navbar';
+import Footer from '@/components/common/Footer';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
@@ -17,15 +20,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <NotificationProvider>
-          <AuthProvider>
-            <div className="min-h-screen bg-gray-50">
-              {children}
-            </div>
-          </AuthProvider>
-        </NotificationProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <NotificationProvider>
+            <AuthProvider>
+              <div className="min-h-screen flex flex-col bg-background text-foreground">
+                <Navbar />
+                <main className="flex-1">
+                  {children}
+                </main>
+                <Footer />
+              </div>
+            </AuthProvider>
+          </NotificationProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

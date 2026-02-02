@@ -1,0 +1,15 @@
+/**
+ * Todo API proxy route (base path)
+ * Handles /api/todos requests
+ */
+
+import { NextRequest } from 'next/server';
+import { proxyRequest } from '@/lib/proxy';
+
+export async function GET(req: NextRequest) {
+  return proxyRequest(req, '/tasks/');
+}
+
+export async function POST(req: NextRequest) {
+  return proxyRequest(req, '/tasks/');
+}

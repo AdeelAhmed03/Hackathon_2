@@ -1,27 +1,27 @@
 """Authentication API routes."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session
+from sqlmodel import Session, select
 from typing import Optional
 from datetime import timedelta
 from ..database.session import get_session
 from ..models.user import User, UserCreate, UserLogin, UserResponse
-from sqlalchemy import select
 from ..middleware.auth import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
-from passlib.context import CryptContext
-
-# Initialize password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 
 router = APIRouter()
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify plain password against hashed password."""
-    return pwd_context.verify(plain_password, hashed_password)
+    return bcrypt.checkpw(
+        plain_password.encode('utf-8'),
+        hashed_password.encode('utf-8')
+    )
 
 def hash_password(password: str) -> str:
     """Hash password using bcrypt."""
-    return pwd_context.hash(password)
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
 @router.post("/register", response_model=UserResponse)
 def register(user_data: UserCreate, session: Session = Depends(get_session)):

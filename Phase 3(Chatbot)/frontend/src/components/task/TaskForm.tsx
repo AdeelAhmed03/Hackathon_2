@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth-context';
 import { useNotification } from '@/contexts/NotificationContext';
-import { Task } from '@/types/task';
+import { Task, TaskPriority } from '@/types/task';
 
 interface TaskFormProps {
   onClose: () => void;
@@ -15,7 +15,7 @@ export default function TaskForm({ onClose, onTaskCreated }: TaskFormProps) {
   const { showNotification } = useNotification();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState(3); // Default to medium priority
+  const [priority, setPriority] = useState<TaskPriority>(TaskPriority.MEDIUM);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -34,7 +34,7 @@ export default function TaskForm({ onClose, onTaskCreated }: TaskFormProps) {
       const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session?.accessToken}`,
+          'Authorization': `Bearer ${session?.token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -49,13 +49,17 @@ export default function TaskForm({ onClose, onTaskCreated }: TaskFormProps) {
         onTaskCreated(newTask);
         setTitle('');
         setDescription('');
-        setPriority(3);
+        setPriority(TaskPriority.MEDIUM);
         showNotification('Task created successfully!', 'success');
         onClose(); // Close the form after successful creation
       } else {
         const errorData = await response.json();
-        setError(errorData.detail || 'Failed to create task');
-        showNotification(`Failed to create task: ${errorData.detail || 'Unknown error'}`, 'error');
+        // Handle Pydantic validation errors (array of error objects)
+        const errorMessage = Array.isArray(errorData.detail)
+          ? errorData.detail.map((e: { msg: string }) => e.msg).join(', ')
+          : errorData.detail || 'Failed to create task';
+        setError(errorMessage);
+        showNotification(`Failed to create task: ${errorMessage}`, 'error');
       }
     } catch (err) {
       setError('An error occurred while creating the task');
@@ -67,38 +71,38 @@ export default function TaskForm({ onClose, onTaskCreated }: TaskFormProps) {
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow border border-gray-200">
-      <h3 className="text-lg font-medium mb-3">Create New Task</h3>
+    <div className="bg-card p-4 rounded-lg shadow-sm border border-border">
+      <h3 className="text-lg font-medium mb-3 text-foreground">Create New Task</h3>
 
       {error && (
-        <div className="mb-3 p-2 bg-red-100 text-red-700 rounded">
+        <div className="mb-3 p-2 bg-destructive/10 text-destructive rounded text-sm">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-foreground mb-1">
             Title *
           </label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className="input-field"
             placeholder="Task title"
             disabled={isLoading}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-foreground mb-1">
             Description
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className="input-field"
             placeholder="Task description (optional)"
             rows={3}
             disabled={isLoading}
@@ -106,38 +110,36 @@ export default function TaskForm({ onClose, onTaskCreated }: TaskFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-foreground mb-1">
             Priority
           </label>
           <select
             value={priority}
-            onChange={(e) => setPriority(Number(e.target.value))}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            onChange={(e) => setPriority(e.target.value as TaskPriority)}
+            className="input-field"
             disabled={isLoading}
           >
-            <option value={1}>Low Priority</option>
-            <option value={2}>Medium Priority</option>
-            <option value={3}>High Priority</option>
-            <option value={4}>Higher Priority</option>
-            <option value={5}>Highest Priority</option>
+            <option value="low">Low Priority</option>
+            <option value="medium">Medium Priority</option>
+            <option value="high">High Priority</option>
           </select>
         </div>
 
         <div className="flex space-x-2 pt-2">
           <button
-            type="submit"
-            className={`flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Creating...' : 'Create Task'}
-          </button>
-          <button
             type="button"
             onClick={onClose}
-            className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400"
+            className="flex-1 btn-secondary"
             disabled={isLoading}
           >
             Cancel
+          </button>
+          <button
+            type="submit"
+            className={`flex-1 btn-primary ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Creating...' : 'Create Task'}
           </button>
         </div>
       </form>

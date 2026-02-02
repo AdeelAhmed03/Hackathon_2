@@ -1,1 +1,28 @@
-[00:01:39.564] Server  LOG      ✓ Ready in 75.8s
+[00:00:05.947] Server  LOG      ✓ Ready in 4s
+[00:00:22.552] Server  LOG      ○ Compiling / ...
+[00:02:02.232] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:02:38.374] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:02:57.041] Server  ERROR   Proxy error: TypeError: fetch failed
+[00:02:57.278] Server  ERROR   Proxy error: TypeError: fetch failed
+[00:03:08.437] Server  ERROR   Proxy error: TypeError: fetch failed
+[00:03:15.007] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:03:58.308] Server  ERROR   Proxy error: TypeError: fetch failed
+[00:04:09.483] Server  ERROR   Proxy error: TypeError: fetch failed
+[00:04:10.679] Server  ERROR   Proxy error: TypeError: fetch failed
+[00:04:20.960] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:04:31.775] Server  ERROR   Proxy error: TypeError: fetch failed
+[00:04:36.302] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:04:56.881] Server  ERROR   Proxy error: TypeError: fetch failed
+[00:06:27.736] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:08:42.451] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:08:49.844] Server  ERROR   Proxy error: TypeError: fetch failed
+[00:08:54.670] Server  ERROR   Proxy error: TypeError: fetch failed
+[00:13:03.151] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:13:27.873] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:14:11.266] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:14:56.071] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:15:48.381] Server  LOG      ✓ Compiled in 1384ms
+[00:18:18.883] Server  LOG      ✓ Compiled in 984ms
+[00:18:27.673] Server  LOG      ✓ Compiled in 689ms
+[00:18:49.758] Server  LOG      ✓ Compiled in 1302ms
+[00:20:05.657] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold

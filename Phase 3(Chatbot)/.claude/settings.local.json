@@ -53,7 +53,31 @@
       "Bash(cmd /c \"taskkill /PID 696 /F\")",
       "Bash(timeout 5 tail:*)",
       "Bash(timeout 15 powershell:*)",
-      "Skill(frontend-deployment-skill)"
+      "Skill(frontend-deployment-skill)",
+      "Bash(pip show:*)",
+      "Bash(timeout:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(:)",
+      "Bash(\"F:\\\\Governor House\\\\GIAIC''s-Quarter-4\\\\Hackathon_Projects\\\\Hackathon_2\\\\Phase 2\\(FullStack\\)\\\\backend\\\\*.py\" /s /b)",
+      "WebFetch(domain:localhost)",
+      "Bash(:curl http://localhost:8000/health)",
+      "Bash(:curl -s http://localhost:8000/health)",
+      "Bash(:curl -s http://localhost:8000/docs)",
+      "Bash(.mkdir -p frontend/src/app/api/auth/[...path])",
+      "Bash(.mkdir -p frontend/src/app/api/todos/[...path])",
+      "Bash(ls:*)",
+      "Bash(ping:*)",
+      "Bash(openssl rand:*)",
+      "Bash(start http://localhost:3000)",
+      "Bash(powershell -Command:*)",
+      "Bash(cmd /c \"type C:\\\\Users\\\\ADEELA~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\F--Governor-House-GIAIC-s-Quarter-4-Hackathon-Projects-Hackathon-2-Phase-2-FullStack-\\\\tasks\\\\b487bce.output\")",
+      "Bash(del \"frontend\\\\.next\\\\dev\\\\lock\")",
+      "Bash(find:*)",
+      "mcp__vercel__list_teams",
+      "mcp__vercel__list_projects",
+      "mcp__vercel__deploy_to_vercel"
     ]
   }
 }
