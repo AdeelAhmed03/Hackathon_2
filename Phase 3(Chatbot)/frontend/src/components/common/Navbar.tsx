@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Sun, Moon, CheckSquare, LogOut, User, LayoutDashboard, ArrowRight } from "lucide-react";
+import { Menu, X, Sun, Moon, CheckSquare, LogOut, User, LayoutDashboard, ArrowRight, MessageSquare } from "lucide-react";
 
 export default function Navbar() {
   const { user, signOut, isLoading } = useAuth();

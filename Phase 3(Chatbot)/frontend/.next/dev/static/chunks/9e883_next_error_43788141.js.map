@@ -2,5 +2,5 @@
   "version": 3,
   "sources": [],
   "sections": [
-    {"offset": {"line": 3, "column": 0}, "map": {"version":3,"sources":["file:///F:/Governor%20House/GIAIC%27s-Quarter-4/Hackathon_Projects/Hackathon_2/Phase%202%28FullStack%29/frontend/node_modules/next/error.js"],"sourcesContent":["module.exports = require('./dist/pages/_error')\n"],"names":[],"mappings":"AAAA,OAAO,OAAO","ignoreList":[0],"debugId":null}}]
+    {"offset": {"line": 3, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/Adeel%20Ahmed/Documents/GitHub/Hackathon_2/Phase%203%28Chatbot%29/frontend/node_modules/next/error.js"],"sourcesContent":["module.exports = require('./dist/pages/_error')\n"],"names":[],"mappings":"AAAA,OAAO,OAAO","ignoreList":[0]}}]
 }

@@ -3,6 +3,7 @@ import { NotificationProvider } from '@/contexts/NotificationContext';
 import { ThemeProvider } from '@/components/common/ThemeProvider';
 import Navbar from '@/components/common/Navbar';
 import Footer from '@/components/common/Footer';
+import FloatingChatButton from '@/components/common/FloatingChatButton';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
@@ -35,6 +36,7 @@ export default function RootLayout({
                 <main className="flex-1">
                   {children}
                 </main>
+                <FloatingChatButton />
                 <Footer />
               </div>
             </AuthProvider>

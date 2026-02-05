@@ -52,8 +52,8 @@ module.exports = mod;
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$frontend$2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/frontend/node_modules/next/server.js [app-route] (ecmascript)");
 ;
-// Backend API URL
-const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://localhost:8000';
+// Backend API URL - use BACKEND_API_URL or fall back to NEXT_PUBLIC_API_BASE_URL
+const BACKEND_API_URL = process.env.BACKEND_API_URL || ("TURBOPACK compile-time value", "http://localhost:8000") || 'https://adeelahmed01-fullstack-todo-app.hf.space';
 async function proxyRequest(req, path) {
     try {
         // Get the authorization header if it exists

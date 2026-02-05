@@ -12,7 +12,7 @@ class ApiClient {
   private defaultHeaders: Record<string, string>;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://adeelahmed01-fullstack-todo-app.hf.space/api/v1';
+    this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://adeelahmed01-todo-chatbot.hf.space';
     this.defaultHeaders = {
       'Content-Type': 'application/json',
     };

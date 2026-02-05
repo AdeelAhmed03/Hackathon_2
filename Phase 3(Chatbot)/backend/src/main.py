@@ -2,11 +2,16 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+import os
+
+# Load environment variables first
+load_dotenv()
+
 from .database.engine import create_tables
 from .api import router as api_router
 from .middleware.auth import security
 import uvicorn
-import os
 
 # Create FastAPI app
 app = FastAPI(

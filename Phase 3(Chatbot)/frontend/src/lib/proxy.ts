@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Backend API URL - use BACKEND_API_URL or fall back to NEXT_PUBLIC_API_BASE_URL
-const BACKEND_API_URL = process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'https://adeelahmed01-fullstack-todo-app.hf.space';
+const BACKEND_API_URL = process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'https://adeelahmed01-todo-chatbot.hf.space';
 
 /**
  * Generic proxy handler for forwarding requests to the FastAPI backend

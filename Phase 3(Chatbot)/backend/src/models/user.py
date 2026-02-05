@@ -1,9 +1,13 @@
 """User model definition."""
 
 from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional
+from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime
 from enum import Enum
+
+if TYPE_CHECKING:
+    from .task import Task
+    from .conversation import Conversation
 
 class UserRole(str, Enum):
     """User roles for authorization."""
@@ -25,7 +29,8 @@ class User(UserBase, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Relationships
-    tasks: list["Task"] = Relationship(back_populates="owner")
+    tasks: List["Task"] = Relationship(back_populates="owner")
+    conversations: List["Conversation"] = Relationship(back_populates="user")
 
 class UserCreate(UserBase):
     """Schema for creating a new user."""

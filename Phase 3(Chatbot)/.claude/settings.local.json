@@ -77,7 +77,19 @@
       "Bash(find:*)",
       "mcp__vercel__list_teams",
       "mcp__vercel__list_projects",
-      "mcp__vercel__deploy_to_vercel"
+      "mcp__vercel__deploy_to_vercel",
+      "Bash(pwsh:*)",
+      "Bash(start http://localhost:3000/chat)",
+      "Bash(if [ -f \"backend/.env\" ])",
+      "Bash(then cat backend/.env)",
+      "Bash(else echo \"No .env file found\")",
+      "Bash(fi)"
     ]
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true,
+    "vercel@claude-plugins-official": true
   }
 }
