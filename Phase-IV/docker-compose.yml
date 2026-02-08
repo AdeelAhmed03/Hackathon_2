@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: todo-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: todo
+      POSTGRES_HOST_AUTH_METHOD: trust
+    command: ["postgres", "-c", "log_statement=all"]
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - todo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  backend:
+    image: todo-backend:v4.0.0
+    container_name: todo-backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      COHERE_API_KEY: ${COHERE_API_KEY}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      FRONTEND_URL: http://localhost:3000
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    networks:
+      - todo-network
+    restart: unless-stopped
+
+  frontend:
+    image: todo-frontend:v4.0.0
+    container_name: todo-frontend
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+      BACKEND_API_URL: http://backend:8000
+      NEXT_PUBLIC_BASE_URL: http://localhost:3000
+      DATABASE_URL: ${DATABASE_URL}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - todo-network
+    restart: unless-stopped
+
+networks:
+  todo-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

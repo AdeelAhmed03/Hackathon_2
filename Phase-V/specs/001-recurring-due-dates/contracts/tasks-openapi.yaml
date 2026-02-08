@@ -1,0 +1,366 @@
+openapi: 3.0.3
+info:
+  title: Task Management API
+  description: API for managing tasks with due dates and recurrence
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Development server
+
+paths:
+  /api/tasks:
+    get:
+      summary: List tasks
+      description: Retrieve a list of tasks for the authenticated user
+      parameters:
+        - name: skip
+          in: query
+          description: Number of records to skip
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: limit
+          in: query
+          description: Maximum number of records to return
+          required: false
+          schema:
+            type: integer
+            default: 100
+        - name: q
+          in: query
+          description: Search query for filtering tasks by title/description
+          required: false
+          schema:
+            type: string
+        - name: priority
+          in: query
+          description: Filter by priority level
+          required: false
+          schema:
+            type: string
+            enum: [low, medium, high]
+        - name: status
+          in: query
+          description: Filter by task status
+          required: false
+          schema:
+            type: string
+            enum: [pending, in_progress, completed]
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+      security:
+        - BearerAuth: []
+
+    post:
+      summary: Create a task
+      description: Create a new task with optional due date and recurrence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      responses:
+        '200':
+          description: Created task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+      security:
+        - BearerAuth: []
+
+  /api/tasks/{id}:
+    get:
+      summary: Get a task
+      description: Retrieve a specific task by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+      security:
+        - BearerAuth: []
+
+    put:
+      summary: Update a task
+      description: Update an existing task with optional due date and recurrence
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+      responses:
+        '200':
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+      security:
+        - BearerAuth: []
+
+    delete:
+      summary: Delete a task
+      description: Delete a specific task by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Task deleted successfully
+        '404':
+          description: Task not found
+      security:
+        - BearerAuth: []
+
+  /api/tasks/{id}/complete:
+    patch:
+      summary: Toggle task completion
+      description: Toggle the completion status of a task; if recurring, creates next instance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Task status toggled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskToggleResponse'
+        '404':
+          description: Task not found
+      security:
+        - BearerAuth: []
+
+  /api/tags:
+    get:
+      summary: List tags
+      description: Retrieve a list of tags for the authenticated user
+      responses:
+        '200':
+          description: List of tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+      security:
+        - BearerAuth: []
+
+    post:
+      summary: Create a tag
+      description: Create a new tag for the authenticated user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagCreate'
+      responses:
+        '200':
+          description: Created tag
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+      security:
+        - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Task:
+      type: object
+      required:
+        - id
+        - title
+        - status
+        - priority
+        - owner_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the task
+        title:
+          type: string
+          description: Task title
+          maxLength: 255
+        description:
+          type: string
+          description: Optional task description
+        status:
+          type: string
+          enum: [pending, in_progress, completed]
+          description: Current status of the task
+        priority:
+          type: string
+          enum: [low, medium, high]
+          description: Priority level of the task
+        owner_id:
+          type: integer
+          description: ID of the user who owns this task
+        created_at:
+          type: string
+          format: date-time
+          description: When the task was created
+        updated_at:
+          type: string
+          format: date-time
+          description: When the task was last updated
+        completed_at:
+          type: string
+          format: date-time
+          description: When the task was completed (if applicable)
+        due_datetime:
+          type: string
+          format: date-time
+          description: When the task is due (optional)
+        recurrence_rule:
+          type: string
+          enum: [daily, weekly, monthly, yearly]
+          description: Recurrence pattern for the task (optional)
+        recurrence_parent_id:
+          type: integer
+          description: ID of the parent task in a recurrence chain (optional)
+        is_overdue:
+          type: boolean
+          description: Whether the task is overdue (computed)
+        is_due_today:
+          type: boolean
+          description: Whether the task is due today (computed)
+        is_due_soon:
+          type: boolean
+          description: Whether the task is due soon (within 48 hours) (computed)
+
+    TaskCreate:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          description: Task title
+          maxLength: 255
+        description:
+          type: string
+          description: Optional task description
+        status:
+          type: string
+          enum: [pending, in_progress, completed]
+          default: pending
+        priority:
+          type: string
+          enum: [low, medium, high]
+          default: medium
+        due_datetime:
+          type: string
+          format: date-time
+          description: When the task is due (optional)
+        recurrence_rule:
+          type: string
+          enum: [daily, weekly, monthly, yearly]
+          description: Recurrence pattern for the task (optional)
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Task title
+          maxLength: 255
+        description:
+          type: string
+          description: Optional task description
+        status:
+          type: string
+          enum: [pending, in_progress, completed]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        due_datetime:
+          type: string
+          format: date-time
+          description: When the task is due (optional)
+        recurrence_rule:
+          type: string
+          enum: [daily, weekly, monthly, yearly]
+          description: Recurrence pattern for the task (optional)
+
+    TaskToggleResponse:
+      type: object
+      properties:
+        current_task:
+          $ref: '#/components/schemas/Task'
+        next_instance:
+          $ref: '#/components/schemas/Task'
+          description: Next instance in recurrence chain (if applicable)
+
+    Tag:
+      type: object
+      required:
+        - id
+        - name
+        - user_id
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the tag
+        name:
+          type: string
+          description: Tag name
+          maxLength: 100
+        user_id:
+          type: integer
+          description: ID of the user who owns this tag
+
+    TagCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Tag name
+          maxLength: 100

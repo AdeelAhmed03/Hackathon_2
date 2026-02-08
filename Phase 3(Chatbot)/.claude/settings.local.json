@@ -83,7 +83,10 @@
       "Bash(if [ -f \"backend/.env\" ])",
       "Bash(then cat backend/.env)",
       "Bash(else echo \"No .env file found\")",
-      "Bash(fi)"
+      "Bash(fi)",
+      "Bash(vercel deploy:*)",
+      "Bash(vercel:*)",
+      "mcp__vercel__get_project"
     ]
   },
   "enabledPlugins": {

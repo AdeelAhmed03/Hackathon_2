@@ -1,0 +1,423 @@
+openapi: 3.0.3
+info:
+  title: AI Todo Chatbot API
+  description: Chat endpoint for AI-powered task management
+  version: 1.0.0
+  contact:
+    name: hackathon-todo
+servers:
+  - url: /api/v1
+    description: Backend API
+
+paths:
+  /chat:
+    post:
+      summary: Send a chat message
+      description: |
+        Send a message to the AI assistant and receive a response.
+        The assistant can execute task management tools based on the message.
+        Requires JWT authentication.
+      operationId: sendChatMessage
+      tags:
+        - Chat
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+            examples:
+              simple_message:
+                summary: Simple greeting
+                value:
+                  message: "Hello, what can you do?"
+              add_task:
+                summary: Add a task
+                value:
+                  message: "Add a task to buy groceries"
+                  conversation_id: 1
+              list_tasks:
+                summary: List tasks
+                value:
+                  message: "Show my high priority tasks"
+                  conversation_id: 1
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+              examples:
+                greeting_response:
+                  summary: Response to greeting
+                  value:
+                    conversation_id: 1
+                    message:
+                      role: "assistant"
+                      content: "Hello! I can help you manage your tasks. You can ask me to add, list, complete, update, or delete tasks."
+                    tool_executed: false
+                task_created:
+                  summary: Task creation response
+                  value:
+                    conversation_id: 1
+                    message:
+                      role: "assistant"
+                      content: "Done! I've created the task 'buy groceries' with medium priority."
+                    tool_executed: true
+                    tool_results:
+                      - tool_name: "add_task"
+                        success: true
+                        result:
+                          task_id: 42
+                          title: "buy groceries"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                empty_message:
+                  summary: Empty message
+                  value:
+                    detail: "Message cannot be empty"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_token:
+                  summary: Invalid or missing token
+                  value:
+                    detail: "Could not validate credentials"
+        '503':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                ai_unavailable:
+                  summary: AI service unavailable
+                  value:
+                    detail: "AI service is temporarily unavailable. Please try again later."
+
+  /chat/conversations:
+    get:
+      summary: List user's conversations
+      description: Get all conversations for the authenticated user
+      operationId: listConversations
+      tags:
+        - Chat
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Maximum number of conversations to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Number of conversations to skip
+      responses:
+        '200':
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationListResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /chat/conversations/{conversation_id}:
+    get:
+      summary: Get conversation with messages
+      description: Get a specific conversation and its message history
+      operationId: getConversation
+      tags:
+        - Chat
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Conversation ID
+        - name: message_limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Maximum number of messages to return
+      responses:
+        '200':
+          description: Conversation with messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationDetailResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Conversation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete a conversation
+      description: Delete a conversation and all its messages
+      operationId: deleteConversation
+      tags:
+        - Chat
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: conversation_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Conversation ID
+      responses:
+        '200':
+          description: Conversation deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Conversation deleted successfully"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Conversation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from Better Auth
+
+  schemas:
+    ChatRequest:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: User's message to the AI assistant
+          example: "Add a task to buy groceries"
+        conversation_id:
+          type: integer
+          nullable: true
+          description: Optional conversation ID to continue. If null, creates new conversation.
+          example: 1
+
+    ChatResponse:
+      type: object
+      required:
+        - conversation_id
+        - message
+      properties:
+        conversation_id:
+          type: integer
+          description: ID of the conversation
+          example: 1
+        message:
+          $ref: '#/components/schemas/MessageResponse'
+        tool_executed:
+          type: boolean
+          description: Whether any tools were executed
+          example: true
+        tool_results:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/ToolResult'
+          description: Results from tool executions (if any)
+
+    MessageResponse:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          enum: [user, assistant, tool]
+          description: Message role
+          example: "assistant"
+        content:
+          type: string
+          description: Message content
+          example: "Done! I've created the task 'buy groceries' with medium priority."
+
+    ToolResult:
+      type: object
+      required:
+        - tool_name
+        - success
+      properties:
+        tool_name:
+          type: string
+          enum: [add_task, list_tasks, complete_task, update_task, delete_task]
+          description: Name of the executed tool
+          example: "add_task"
+        success:
+          type: boolean
+          description: Whether the tool executed successfully
+          example: true
+        result:
+          type: object
+          additionalProperties: true
+          description: Tool-specific result data
+          example:
+            task_id: 42
+            title: "buy groceries"
+
+    ConversationListResponse:
+      type: object
+      required:
+        - conversations
+        - total
+      properties:
+        conversations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConversationSummary'
+        total:
+          type: integer
+          description: Total number of conversations
+          example: 5
+
+    ConversationSummary:
+      type: object
+      required:
+        - id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          nullable: true
+          example: "Task management chat"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-02-04T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2026-02-04T14:45:00Z"
+        message_count:
+          type: integer
+          description: Number of messages in conversation
+          example: 12
+
+    ConversationDetailResponse:
+      type: object
+      required:
+        - id
+        - messages
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          nullable: true
+          example: "Task management chat"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageDetail'
+
+    MessageDetail:
+      type: object
+      required:
+        - id
+        - role
+        - created_at
+      properties:
+        id:
+          type: integer
+          example: 1
+        role:
+          type: string
+          enum: [user, assistant, tool]
+        content:
+          type: string
+          nullable: true
+        tool_calls:
+          type: object
+          nullable: true
+          additionalProperties: true
+        tool_results:
+          type: object
+          nullable: true
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Error message
+          example: "Could not validate credentials"
+
+tags:
+  - name: Chat
+    description: AI-powered chat endpoints for task management

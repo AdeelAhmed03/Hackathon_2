@@ -1,0 +1,66 @@
+# PostgreSQL Helm Chart Values
+# For local Kubernetes deployment (Phase IV)
+
+# Replica configuration (always 1 for PostgreSQL)
+replicaCount: 1
+
+# Container image
+image:
+  repository: postgres
+  tag: "16-alpine"
+  pullPolicy: IfNotPresent
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 5432
+
+# Secret values (set via --set, never commit real values)
+secrets:
+  postgresPassword: ""       # REQUIRED: Set via --set secrets.postgresPassword=xxx
+  postgresUser: "postgres"
+  postgresDb: "todo"
+
+# Persistent storage
+persistence:
+  enabled: true
+  storageClass: "standard"   # Minikube default StorageClass
+  size: 1Gi
+  accessModes:
+    - ReadWriteOnce
+
+# Resource limits
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+# Health probes
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Pod annotations
+podAnnotations: {}
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}

@@ -1,0 +1,85 @@
+# Todo Backend Helm Chart Values
+# For local Kubernetes deployment (Phase IV)
+
+# Replica configuration
+replicaCount: 2
+
+# Container image
+image:
+  repository: todo-backend
+  tag: v4.0.0
+  pullPolicy: IfNotPresent
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8000
+
+# Secret values (set via --set, never commit real values)
+secrets:
+  cohereApiKey: ""           # REQUIRED: Set via --set secrets.cohereApiKey=xxx
+  betterAuthSecret: ""       # REQUIRED: Set via --set secrets.betterAuthSecret=xxx
+  databaseUrl: "postgresql://postgres:password@postgres:5432/todo"
+
+# Non-sensitive configuration
+config:
+  frontendUrl: "http://todo-frontend:3000"
+  port: "8000"
+
+# Resource limits
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+
+# Health probes
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Ingress configuration (optional)
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: todo.local
+      paths:
+        - path: /api
+          pathType: Prefix
+
+# Pod annotations
+podAnnotations: {}
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}

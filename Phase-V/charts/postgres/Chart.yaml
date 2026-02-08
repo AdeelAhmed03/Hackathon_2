@@ -1,0 +1,12 @@
+apiVersion: v2
+name: postgres
+description: PostgreSQL database for Todo application
+type: application
+version: 0.1.0
+appVersion: "16"
+keywords:
+  - postgresql
+  - database
+  - todo
+maintainers:
+  - name: Adeel Ahmed
