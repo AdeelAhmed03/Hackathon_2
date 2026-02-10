@@ -40,6 +40,7 @@ class TaskBase(SQLModel):
     status: TaskStatus = TaskStatus.PENDING
     priority: TaskPriority = TaskPriority.MEDIUM
     due_datetime: Optional[datetime] = None
+    remind_at: Optional[datetime] = None  # T017: Reminder datetime
     recurrence_rule: Optional[RecurrenceRule] = None
 
 class Task(TaskBase, table=True):
@@ -71,7 +72,9 @@ class TaskUpdate(SQLModel):
     status: Optional[TaskStatus] = None
     priority: Optional[TaskPriority] = None
     due_datetime: Optional[datetime] = None
+    remind_at: Optional[datetime] = None
     recurrence_rule: Optional[RecurrenceRule] = None
+    tag_ids: Optional[List[int]] = None  # T040: Tag IDs for update
 
 class TaskRead(TaskBase):
     """Schema for reading task data."""
@@ -81,3 +84,45 @@ class TaskRead(TaskBase):
     updated_at: datetime
     completed_at: Optional[datetime] = None
     recurrence_parent_id: Optional[int] = None
+    tags: List["TagRead"] = []  # T041: Include tags in response
+
+
+class TaskCreateWithTags(TaskBase):
+    """Schema for creating a task with tags.
+
+    T039: TaskCreate schema with new fields.
+    """
+    tag_ids: Optional[List[int]] = None  # IDs of existing tags to attach
+
+
+class TaskListQuery(SQLModel):
+    """Query parameters for listing tasks.
+
+    T075: Add priority to TaskListQuery schema.
+    """
+    q: Optional[str] = None  # T099: Search keyword
+    status: Optional[TaskStatus] = None
+    priority: Optional[TaskPriority] = None
+    tags: Optional[List[int]] = None  # T091: Tag IDs for filtering
+    due_before: Optional[datetime] = None  # T100: Due date range
+    due_after: Optional[datetime] = None
+    sort_by: Optional[str] = "created_at"  # T109: Sort field
+    sort_order: Optional[str] = "desc"  # T110: asc/desc
+    page: int = 1
+    page_size: int = 50
+
+
+class TaskListResponse(SQLModel):
+    """Response for paginated task list.
+
+    T101: Add pagination metadata.
+    """
+    items: List[TaskRead]
+    total_count: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
+# Import TagRead for type hints
+from .tag import TagRead

@@ -1,14 +1,18 @@
-# Claude Code Rules: hackathon-todo (Phase IV)
+# Claude Code Rules: hackathon-todo (Phase V)
 
-This file contains specific instructions for Claude when working on the Full-Stack Todo application. Adhere to the Phase IV - Kubernetes Deployment with AI-Assisted DevOps architecture.
+This file contains specific instructions for Claude when working on the Full-Stack Todo application. Adhere to the Phase V - Event-Driven Architecture with Dapr, Kafka, and Cloud Kubernetes Deployment.
 
 ## Project Context
 
-The Todo application is a cloud-native full-stack web application with:
-- **Backend**: FastAPI with Cohere AI integration for chatbot functionality
+The Todo application is an event-driven, cloud-native full-stack web application with:
+- **Backend**: FastAPI with Cohere AI integration for chatbot functionality + Dapr sidecar
 - **Frontend**: Next.js 16+ App Router with ChatKit UI
-- **Database**: Local PostgreSQL via Helm (NOT Neon in Phase IV)
-- **Deployment**: Minikube + Helm charts for Kubernetes orchestration
+- **Microservices**: notification-service, recurring-service (event consumers)
+- **Database**: PostgreSQL via Helm (local or cloud Kubernetes)
+- **Event Streaming**: Kafka (Strimzi local / Redpanda Cloud production) via Dapr Pub/Sub
+- **Scheduling**: Dapr Jobs API for exact-time reminders
+- **Deployment**: Minikube (local) + Azure AKS Free Tier (cloud)
+- **CI/CD**: GitHub Actions for automated build, test, and deployment
 - **AI DevOps**: Gordon, kubectl-ai, and kagent for intelligent infrastructure management
 
 ## Code Standards
@@ -18,8 +22,9 @@ The Todo application is a cloud-native full-stack web application with:
 - **AI Provider**: Cohere Python SDK (NOT OpenAI)
 - **Validation**: Pydantic v2 schemas
 - **Style**: PEP 8 compliance, mandatory type hints (Python 3.13+)
-- **Security**: Data isolation per `user_id` is mandatory for all queries
+- **Security**: Data isolation per `user_id` is mandatory for all queries and events
 - **Containerization**: Production-optimized Dockerfile with multi-stage builds
+- **Dapr Integration**: Use httpx for Dapr HTTP API calls (NOT direct kafka-python)
 
 ### Frontend (TypeScript)
 - **Framework**: Next.js 16+ (App Router)
@@ -28,193 +33,342 @@ The Todo application is a cloud-native full-stack web application with:
 - **Types**: Mandatory TypeScript interfaces for all API entities
 - **Containerization**: Multi-stage Dockerfile (build + production)
 
-### Infrastructure (Kubernetes)
-- **Cluster**: Minikube (single-node local)
-- **Packaging**: Helm 3+ charts
-- **Secrets**: Kubernetes Secrets (never plaintext in repo)
+### Infrastructure (Kubernetes + Dapr)
+- **Cluster**: Minikube (local) or Azure AKS Free Tier (cloud)
+- **Packaging**: Helm 3+ charts with Dapr sidecar annotations
+- **Secrets**: Dapr Secrets API (kubernetes-secrets component)
 - **Persistence**: PersistentVolumeClaims for PostgreSQL
+- **Event Streaming**: Dapr Pub/Sub with Kafka/Redpanda backend
 
 ## Monorepo Structure
 
 ```
-Phase-IV/
-├── backend/                    # FastAPI service
+Phase-V/
+├── backend/                        # FastAPI main service
 │   ├── src/
-│   │   ├── models/            # SQLModel entities
-│   │   ├── api/               # Routes and controllers
-│   │   ├── services/          # Business logic (chat_service, tool_service)
-│   │   └── tools/             # MCP-style tools for Cohere
-│   ├── Dockerfile             # Backend container definition
+│   │   ├── models/                # SQLModel entities (Task, Tag, TaskTag)
+│   │   ├── api/                   # Routes and controllers
+│   │   │   ├── tasks.py          # Enhanced with search/filter/sort
+│   │   │   ├── tags.py           # Tag management endpoints
+│   │   │   ├── dapr_subscriptions.py  # Dapr Pub/Sub handlers
+│   │   │   └── jobs_callback.py  # Dapr Jobs API callback
+│   │   ├── services/             # Business logic
+│   │   │   ├── event_publisher.py # Dapr Pub/Sub publisher
+│   │   │   ├── job_scheduler.py  # Dapr Jobs API scheduler
+│   │   │   └── chat_service.py   # Cohere integration
+│   │   └── tools/                # MCP-style tools for Cohere
+│   ├── migrations/               # Alembic migrations
+│   ├── Dockerfile
 │   └── requirements.txt
-├── frontend/                   # Next.js service
+├── notification-service/          # NEW: Reminder consumer
 │   ├── src/
-│   │   ├── components/        # React components (including chat/)
-│   │   ├── hooks/             # Custom hooks (useChat)
-│   │   └── types/             # TypeScript definitions
-│   ├── Dockerfile             # Frontend container definition
+│   │   ├── main.py               # FastAPI + Dapr subscription
+│   │   └── handlers/             # Event handlers
+│   ├── Dockerfile
+│   └── requirements.txt
+├── recurring-service/             # NEW: Recurring task spawner
+│   ├── src/
+│   │   ├── main.py               # FastAPI + Dapr subscription
+│   │   └── handlers/             # Event handlers
+│   ├── Dockerfile
+│   └── requirements.txt
+├── frontend/                      # Next.js service
+│   ├── src/
+│   │   ├── components/           # React components
+│   │   │   ├── tasks/           # TaskForm, TaskFilters, TagSelector
+│   │   │   └── chat/            # Chat UI components
+│   │   ├── hooks/               # Custom hooks
+│   │   └── types/               # TypeScript definitions
+│   ├── Dockerfile
 │   └── package.json
-├── charts/                     # Helm charts (NEW in Phase IV)
-│   ├── todo-frontend/         # Frontend Helm chart
-│   ├── todo-backend/          # Backend Helm chart
-│   └── postgres/              # PostgreSQL Helm chart
-├── scripts/                    # Deployment scripts
-│   ├── minikube-setup.sh      # Minikube initialization
-│   └── deploy.sh              # Helm deployment
-├── specs/                      # Feature specifications
-├── docker-compose.yml          # Local dev (non-K8s)
-└── .specify/                   # Spec-Kit configuration
+├── dapr-components/               # NEW: Dapr component definitions
+│   ├── kafka-pubsub.yaml         # Kafka Pub/Sub component
+│   ├── kafka-pubsub-local.yaml   # Local Strimzi config
+│   ├── kafka-pubsub-cloud.yaml   # Redpanda Cloud config
+│   ├── kubernetes-secrets.yaml   # Secrets component
+│   └── strimzi/
+│       └── kafka-cluster.yaml    # Strimzi KafkaCluster CR
+├── charts/                        # Helm charts
+│   ├── todo-frontend/            # Updated with Dapr annotations
+│   ├── todo-backend/             # Updated with Dapr annotations
+│   ├── notification-service/     # NEW
+│   ├── recurring-service/        # NEW
+│   └── postgres/
+├── .github/workflows/             # NEW: CI/CD pipelines
+│   ├── ci.yaml                   # Build and test
+│   └── deploy.yaml               # Deploy to staging/production
+├── scripts/
+│   ├── minikube-setup.sh         # Updated with Dapr + Strimzi
+│   ├── deploy-local.sh           # Local deployment
+│   └── deploy-cloud.sh           # Cloud deployment
+├── specs/                         # Feature specifications
+├── docker-compose.yml             # Local dev (Phase IV compatibility)
+└── .specify/                      # Spec-Kit configuration
 ```
 
 ## AI Provider Rules (CRITICAL)
 
 **MUST use Cohere API exclusively:**
 - Import: `import cohere`
-- Client: `cohere.Client()` with `COHERE_API_KEY`
-- Tool calling: Via Cohere's chat API with `tools` parameter
+- Client: `cohere.Client()` with `COHERE_API_KEY` (via Dapr Secrets)
+- Tool calling: Structured JSON prompt with command-r-plus model
 
 **FORBIDDEN:**
 - `openai` package installation or import
 - `OPENAI_API_KEY` environment variable
 - Any OpenAI API calls
 
+## Dapr Integration Patterns
+
+### Publishing Events
+```python
+import httpx
+
+DAPR_HTTP_PORT = 3500
+PUBSUB_NAME = "kafka-pubsub"
+
+async def publish_event(topic: str, event: dict):
+    """Publish event to Kafka via Dapr Pub/Sub."""
+    url = f"http://localhost:{DAPR_HTTP_PORT}/v1.0/publish/{PUBSUB_NAME}/{topic}"
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json=event)
+        response.raise_for_status()
+```
+
+### Subscribing to Events
+```python
+from fastapi import FastAPI, Request
+
+app = FastAPI()
+
+@app.get("/dapr/subscribe")
+async def subscribe():
+    """Dapr subscription discovery endpoint."""
+    return [
+        {
+            "pubsubname": "kafka-pubsub",
+            "topic": "task-events",
+            "route": "/events/task-events"
+        }
+    ]
+
+@app.post("/events/task-events")
+async def handle_task_event(request: Request):
+    """Handle task events from Kafka."""
+    event = await request.json()
+    # Process event
+    return {"status": "SUCCESS"}
+```
+
+### Scheduling Jobs (Reminders)
+```python
+async def schedule_reminder(task_id: str, user_id: str, remind_at: datetime):
+    """Schedule reminder via Dapr Jobs API."""
+    job_name = f"reminder-{task_id}"
+    url = f"http://localhost:{DAPR_HTTP_PORT}/v1.0-alpha1/jobs/{job_name}"
+    payload = {
+        "dueTime": remind_at.isoformat(),
+        "data": {
+            "task_id": task_id,
+            "user_id": user_id,
+            "reminder_message": "Task due soon"
+        }
+    }
+    async with httpx.AsyncClient() as client:
+        await client.post(url, json=payload)
+```
+
+### Retrieving Secrets
+```python
+async def get_secret(secret_name: str, key: str) -> str:
+    """Retrieve secret via Dapr Secrets API."""
+    url = f"http://localhost:{DAPR_HTTP_PORT}/v1.0/secrets/kubernetes-secrets/{secret_name}"
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        data = response.json()
+        return data[key]
+```
+
+## Kafka Topics and Events
+
+### Topics
+- **task-events**: CRUD operations (task_created, task_updated, task_completed, task_deleted)
+- **reminders**: Due date notifications (reminder_due)
+- **task-updates**: Real-time sync (future)
+
+### Event Schema
+```json
+{
+  "event_type": "task_created | task_updated | task_completed | task_deleted",
+  "task_id": "uuid",
+  "task_data": {
+    "title": "string",
+    "priority": "low | medium | high",
+    "tags": ["string"],
+    "due_at": "ISO8601",
+    "recurring_interval": "daily | weekly | monthly | yearly | null"
+  },
+  "user_id": "uuid",
+  "timestamp": "ISO8601"
+}
+```
+
 ## Kubernetes Deployment
 
-### Helm Charts
-Each chart in `/charts/` must include:
-- `Chart.yaml` - Chart metadata
-- `values.yaml` - Configurable values
-- `templates/deployment.yaml` - Pod specification
-- `templates/service.yaml` - Service exposure
-- `templates/configmap.yaml` - Non-sensitive config
-- `templates/secret.yaml` - Sensitive values (backend only)
+### Helm Charts with Dapr
+Each chart must include Dapr sidecar annotations:
+```yaml
+# templates/deployment.yaml
+spec:
+  template:
+    metadata:
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "backend"
+        dapr.io/app-port: "8000"
+        dapr.io/log-level: "info"
+```
 
-### Resource Types
-- **Deployments**: Manage pod replicas
-- **Services**: ClusterIP (internal), LoadBalancer/NodePort (external)
-- **ConfigMaps**: Non-sensitive environment configuration
-- **Secrets**: DATABASE_URL, COHERE_API_KEY, BETTER_AUTH_SECRET
-- **PersistentVolumeClaims**: PostgreSQL data persistence
-
-### Commands Reference
+### Local Deployment (Minikube + Strimzi)
 ```bash
 # Start Minikube
-minikube start
+minikube start --cpus=4 --memory=8192
 
-# Build images (use Minikube's Docker daemon)
-eval $(minikube docker-env)
-docker build -t todo-backend:v4.0.0 ./backend
-docker build -t todo-frontend:v4.0.0 ./frontend
+# Install Dapr
+dapr init -k --wait
 
-# Deploy with Helm
+# Install Strimzi Kafka
+kubectl create namespace kafka
+kubectl apply -f "https://strimzi.io/install/latest?namespace=kafka" -n kafka
+kubectl apply -f dapr-components/strimzi/kafka-cluster.yaml -n kafka
+
+# Apply Dapr components
+kubectl apply -f dapr-components/kafka-pubsub-local.yaml
+kubectl apply -f dapr-components/kubernetes-secrets.yaml
+
+# Deploy services
 helm install postgres ./charts/postgres
 helm install todo-backend ./charts/todo-backend
+helm install notification-service ./charts/notification-service
+helm install recurring-service ./charts/recurring-service
 helm install todo-frontend ./charts/todo-frontend
-
-# Access services
-kubectl port-forward svc/todo-frontend 3000:3000
-kubectl port-forward svc/todo-backend 8000:8000
-
-# Debugging
-kubectl logs -f deployment/todo-backend
-kubectl describe pod <pod-name>
-kubectl get events --sort-by=.metadata.creationTimestamp
 ```
 
-## AI DevOps Tools
-
-### Gordon (Docker AI)
+### Cloud Deployment (Oracle OKE + Redpanda Cloud)
 ```bash
-# Generate optimized Dockerfile
-docker ai build --optimize ./backend
+# Configure kubectl for OKE
+oci ce cluster create-kubeconfig --cluster-id <ocid> --file ~/.kube/config-oke
+export KUBECONFIG=~/.kube/config-oke
 
-# Security scan
-docker ai scan todo-backend:v4.0.0
+# Install Dapr
+helm repo add dapr https://dapr.github.io/helm-charts/
+helm install dapr dapr/dapr --namespace dapr-system --create-namespace
 
-# Compose to K8s hints
-docker ai convert docker-compose.yml
+# Create secrets for Redpanda Cloud
+kubectl create secret generic redpanda-secrets \
+  --from-literal=sasl-password="your-password"
+
+# Apply Dapr components (cloud config)
+kubectl apply -f dapr-components/kafka-pubsub-cloud.yaml
+kubectl apply -f dapr-components/kubernetes-secrets.yaml
+
+# Deploy services
+helm install postgres ./charts/postgres
+helm install todo-backend ./charts/todo-backend
+helm install notification-service ./charts/notification-service
+helm install recurring-service ./charts/recurring-service
+helm install todo-frontend ./charts/todo-frontend
 ```
 
-### kubectl-ai
-```bash
-# Generate manifests from description
-kubectl-ai "create deployment for fastapi backend with 2 replicas"
+## CI/CD with GitHub Actions
 
-# Debug issues
-kubectl-ai "why is my pod crashing?"
+### Workflow Triggers
+- **Push to develop**: Deploy to staging
+- **Push to main**: Deploy to production (with approval gate)
+- **Pull request**: Run tests and Helm lint
 
-# Optimize resources
-kubectl-ai "suggest resource limits for todo-backend"
-```
-
-### kagent
-```bash
-# Health check analysis
-kagent health todo-backend
-
-# Scaling recommendations
-kagent scale --analyze todo-frontend
-
-# Log analysis
-kagent logs --diagnose todo-backend
-```
+### Required GitHub Secrets
+- `KUBECONFIG_STAGING`: Base64-encoded kubeconfig for staging
+- `KUBECONFIG_PRODUCTION`: Base64-encoded kubeconfig for production
+- `COHERE_API_KEY`: Cohere API key
+- `BETTER_AUTH_SECRET`: JWT signing secret
 
 ## Implementation Notes: Advanced Features
 
-- **Priorities**: `low`, `medium` (default), `high`
-- **Tags**: Multi-select tags per task; global tag list stored in relational `Tag` entity
+### Task Model Enhancements
+- **priority**: `low`, `medium` (default), `high`
+- **tags**: Multi-select via Tag entity and TaskTag junction table
+- **due_at**: Nullable datetime (UTC), displays as relative time
+- **remind_at**: Nullable datetime (UTC), triggers Dapr Jobs API
+- **recurring_interval**: `daily`, `weekly`, `monthly`, `yearly` (nullable)
+
+### Search, Filter, Sort
 - **Search**: Case-insensitive keyword search on title/description via `q` param
-- **Filter**: Intersection (AND) logic for multiple tags and priorities
-- **Sorting**: Priority-aware sorting (High > Low) and standard Date/Alpha fields
-- **Due Dates**: Optional datetime field with timezone support; displays as relative time
-- **Recurring Tasks**: Optional recurrence rule (daily/weekly/monthly/yearly); auto-regenerates on completion
-- **AI Chatbot**: Natural language task management via Cohere tool calling
-- **MCP Tools**: add_task, list_tasks, complete_task, update_task, delete_task
+- **Filter**: Intersection (AND) logic for tags; single-value for priority/status
+- **Sort**: `sort_by` (created_at, due_at, priority, title) + `sort_order` (asc, desc)
+
+### Recurring Tasks
+- On completion, backend publishes `task_completed` event
+- recurring-service consumes event, checks `recurring_interval`
+- If recurring, creates new task with `due_at += interval`
+
+### Reminders
+- On task create/update with `remind_at`, schedule Dapr Job
+- At `remind_at`, Dapr triggers `/jobs/callback`
+- Backend publishes `reminder_due` event to `reminders` topic
+- notification-service sends email/push notification
 
 ## Environment Variables
 
-### Required (Kubernetes Secrets)
-- `DATABASE_URL` - PostgreSQL connection (local K8s service DNS)
+### Required (via Dapr Secrets)
+- `DATABASE_URL` - PostgreSQL connection string
 - `COHERE_API_KEY` - Cohere AI API key
-- `BETTER_AUTH_SECRET` - JWT signing secret (shared frontend/backend)
+- `BETTER_AUTH_SECRET` - JWT signing secret
 - `FRONTEND_URL` - Frontend origin for CORS
 
-### Example K8s Secret
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: todo-backend-secrets
-type: Opaque
-stringData:
-  DATABASE_URL: postgresql://postgres:password@postgres:5432/todo
-  COHERE_API_KEY: your-cohere-key
-  BETTER_AUTH_SECRET: your-jwt-secret
+### Kafka/Redpanda (in Dapr component)
+- `KAFKA_BOOTSTRAP_SERVERS` - Broker addresses
+- `KAFKA_SASL_USERNAME` - SASL username (cloud only)
+- `KAFKA_SASL_PASSWORD` - SASL password (cloud only)
+
+### Dapr (automatic)
+- `DAPR_HTTP_PORT` - Sidecar HTTP port (default: 3500)
+- `DAPR_GRPC_PORT` - Sidecar gRPC port (default: 50001)
+
+## Monitoring and Observability
+
+### Dapr Tracing (Zipkin)
+```bash
+# View traces
+kubectl port-forward svc/zipkin 9411:9411 -n dapr-system
+# Open http://localhost:9411
 ```
 
-## Testing in Kubernetes
-
+### Dapr Metrics (Prometheus)
 ```bash
-# Port-forward for local testing
-kubectl port-forward svc/todo-backend 8000:8000
+# Metrics endpoint
+curl http://localhost:9090/metrics
+```
 
-# Check pod status
-kubectl get pods -l app=todo-backend
+### Application Logs
+```bash
+# Backend logs
+kubectl logs -f -l app=todo-backend -c todo-backend
 
-# View logs
-kubectl logs -f -l app=todo-backend
+# Dapr sidecar logs
+kubectl logs -f -l app=todo-backend -c daprd
 
-# Describe for events/errors
-kubectl describe deployment todo-backend
-
-# Helm test (if configured)
-helm test todo-backend
+# Event consumer logs
+kubectl logs -f -l app=notification-service
+kubectl logs -f -l app=recurring-service
 ```
 
 ## Constitution Reference
 
-All decisions must align with `.specify/memory/constitution.md` (v4.0.0). Key principles:
+All decisions must align with `.specify/memory/constitution.md` (v5.0.0). Key principles:
 - Spec-driven development
-- Multi-user security isolation
+- Multi-user security isolation (user_id in all queries AND events)
 - Cohere-only AI provider
-- Kubernetes-native deployment
-- AI-assisted DevOps workflow
+- Event-driven architecture with Dapr abstraction
+- Kubernetes-native deployment (local + cloud)
+- CI/CD automation with GitHub Actions

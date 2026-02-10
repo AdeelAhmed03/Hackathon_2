@@ -114,7 +114,8 @@
       "Bash(kubectl get:*)",
       "Bash(wsl -d Ubuntu -e bash -c \"minikube start --driver=docker\")",
       "Bash(wsl -d Ubuntu -e bash -c \"curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64 && minikube start --driver=docker\")",
-      "Bash(wsl -d Ubuntu -e bash -c:*)"
+      "Bash(wsl -d Ubuntu -e bash -c:*)",
+      "Bash(wsl:*)"
     ]
   },
   "enabledPlugins": {

@@ -1,4 +1,8 @@
+# Phase V: Event-Driven Architecture Docker Compose
+# Local development environment with Kafka, Dapr simulation, and all microservices
+
 services:
+  # PostgreSQL Database
   postgres:
     image: postgres:16
     container_name: todo-postgres
@@ -20,35 +24,93 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  # Backend API Service - Built from local Dockerfile
   backend:
-    image: todo-backend:v4.0.0
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: todo-backend:v5.0.0
     container_name: todo-backend
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/todo
       COHERE_API_KEY: ${COHERE_API_KEY}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       FRONTEND_URL: http://localhost:3000
       PORT: 8000
+      # Dapr simulation (no actual Dapr sidecar in docker-compose)
+      DAPR_HTTP_PORT: 3500
+      PUBSUB_NAME: kafka-pubsub
     ports:
       - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - todo-network
+    restart: unless-stopped
+
+  # Frontend Service - Built from local Dockerfile
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: todo-frontend:v5.0.0
+    container_name: todo-frontend
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+      BACKEND_API_URL: http://backend:8000
+      NEXT_PUBLIC_BASE_URL: http://localhost:3000
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/todo
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - todo-network
+    restart: unless-stopped
+
+  # Notification Service - Built from local Dockerfile
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    image: notification-service:v5.0.0
+    container_name: notification-service
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/todo
+      DAPR_HTTP_PORT: 3500
+      PUBSUB_NAME: kafka-pubsub
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
+      PORT: 8001
+    ports:
+      - "8001:8001"
     depends_on:
       - postgres
     networks:
       - todo-network
     restart: unless-stopped
 
-  frontend:
-    image: todo-frontend:v4.0.0
-    container_name: todo-frontend
+  # Recurring Service - Built from local Dockerfile
+  recurring-service:
+    build:
+      context: ./recurring-service
+      dockerfile: Dockerfile
+    image: recurring-service:v5.0.0
+    container_name: recurring-service
     environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
-      BACKEND_API_URL: http://backend:8000
-      NEXT_PUBLIC_BASE_URL: http://localhost:3000
-      DATABASE_URL: ${DATABASE_URL}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/todo
+      BACKEND_URL: http://backend:8000
+      DAPR_HTTP_PORT: 3500
+      PUBSUB_NAME: kafka-pubsub
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
+      PORT: 8002
     ports:
-      - "3000:3000"
+      - "8002:8002"
     depends_on:
+      - postgres
       - backend
     networks:
       - todo-network

@@ -1,0 +1,39 @@
+# Dapr Kafka Pub/Sub Component - Cloud Configuration (Redpanda Cloud)
+# T003: Cloud Kafka configuration for production deployment
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: kafka-pubsub
+  namespace: default
+spec:
+  type: pubsub.kafka
+  version: v1
+  metadata:
+    - name: brokers
+      # Replace with your Redpanda Cloud bootstrap servers
+      value: "<REDPANDA_BOOTSTRAP_SERVERS>"
+    - name: consumerGroup
+      value: "todo-app"
+    - name: authType
+      value: "password"
+    - name: saslUsername
+      # Replace with your Redpanda Cloud SASL username
+      value: "<REDPANDA_SASL_USERNAME>"
+    - name: saslPassword
+      secretKeyRef:
+        name: redpanda-secrets
+        key: sasl-password
+    - name: saslMechanism
+      value: "SCRAM-SHA-256"
+    - name: initialOffset
+      value: "oldest"
+    - name: maxMessageBytes
+      value: "1048576"
+    - name: compressionType
+      value: "gzip"
+    - name: tls
+      value: "true"
+  scopes:
+    - todo-backend
+    - notification-service
+    - recurring-service

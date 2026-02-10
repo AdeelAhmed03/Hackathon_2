@@ -1,0 +1,286 @@
+openapi: 3.1.0
+info:
+  title: Dapr Integration Endpoints
+  description: Internal endpoints for Dapr Pub/Sub subscriptions and Jobs API callbacks
+  version: 5.0.0
+
+servers:
+  - url: http://localhost:8000
+    description: Backend service
+  - url: http://localhost:8001
+    description: Notification service
+  - url: http://localhost:8002
+    description: Recurring service
+
+paths:
+  # Dapr Subscription Discovery Endpoint
+  /dapr/subscribe:
+    get:
+      summary: Dapr subscription discovery
+      description: |
+        Dapr calls this endpoint to discover topic subscriptions.
+        Returns list of topics this service subscribes to.
+      operationId: getDaprSubscriptions
+      tags: [Dapr]
+      responses:
+        '200':
+          description: List of subscriptions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DaprSubscription'
+              examples:
+                backend:
+                  value:
+                    - pubsubname: kafka-pubsub
+                      topic: task-events
+                      route: /events/task-events
+                notification:
+                  value:
+                    - pubsubname: kafka-pubsub
+                      topic: reminders
+                      route: /events/reminders
+                recurring:
+                  value:
+                    - pubsubname: kafka-pubsub
+                      topic: task-events
+                      route: /events/task-completed
+                      routes:
+                        rules:
+                          - match: event.type == "task_completed"
+                            path: /events/task-completed
+
+  # Backend: Task Events Handler
+  /events/task-events:
+    post:
+      summary: Handle task events (backend)
+      description: Dapr invokes this when messages arrive on task-events topic
+      operationId: handleTaskEvents
+      tags: [Dapr, Backend]
+      requestBody:
+        required: true
+        content:
+          application/cloudevents+json:
+            schema:
+              $ref: '#/components/schemas/CloudEvent'
+      responses:
+        '200':
+          description: Event processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaprResponse'
+        '500':
+          description: Processing failed (Dapr will retry)
+
+  # Notification Service: Reminders Handler
+  /events/reminders:
+    post:
+      summary: Handle reminder events (notification-service)
+      description: Dapr invokes this when messages arrive on reminders topic
+      operationId: handleReminders
+      tags: [Dapr, Notification]
+      requestBody:
+        required: true
+        content:
+          application/cloudevents+json:
+            schema:
+              $ref: '#/components/schemas/CloudEvent'
+      responses:
+        '200':
+          description: Notification sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaprResponse'
+        '500':
+          description: Notification failed (Dapr will retry)
+
+  # Recurring Service: Task Completed Handler
+  /events/task-completed:
+    post:
+      summary: Handle task completed events (recurring-service)
+      description: |
+        Dapr invokes this when task_completed events arrive.
+        If task has recurring_interval, creates next instance.
+      operationId: handleTaskCompleted
+      tags: [Dapr, Recurring]
+      requestBody:
+        required: true
+        content:
+          application/cloudevents+json:
+            schema:
+              $ref: '#/components/schemas/CloudEvent'
+      responses:
+        '200':
+          description: Event processed (new task created if recurring)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaprResponse'
+        '500':
+          description: Processing failed (Dapr will retry)
+
+  # Backend: Jobs API Callback
+  /jobs/callback:
+    post:
+      summary: Dapr Jobs API callback
+      description: |
+        Dapr invokes this endpoint when a scheduled job's dueTime is reached.
+        Used for reminder notifications.
+      operationId: handleJobCallback
+      tags: [Dapr, Jobs]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobCallback'
+      responses:
+        '200':
+          description: Job processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+        '500':
+          description: Job processing failed
+
+  # Health Check (Dapr uses this)
+  /health:
+    get:
+      summary: Health check
+      description: Kubernetes and Dapr liveness/readiness probe
+      operationId: healthCheck
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  dapr:
+                    type: boolean
+                    example: true
+
+components:
+  schemas:
+    DaprSubscription:
+      type: object
+      required:
+        - pubsubname
+        - topic
+        - route
+      properties:
+        pubsubname:
+          type: string
+          description: Name of the Dapr Pub/Sub component
+          example: kafka-pubsub
+        topic:
+          type: string
+          description: Kafka topic to subscribe to
+          example: task-events
+        route:
+          type: string
+          description: HTTP path to invoke on message
+          example: /events/task-events
+        routes:
+          type: object
+          description: Advanced routing rules
+          properties:
+            rules:
+              type: array
+              items:
+                type: object
+                properties:
+                  match:
+                    type: string
+                    description: CEL expression for matching
+                  path:
+                    type: string
+                    description: Route if match succeeds
+            default:
+              type: string
+              description: Default route if no rules match
+
+    CloudEvent:
+      type: object
+      description: CloudEvents format used by Dapr Pub/Sub
+      properties:
+        id:
+          type: string
+          description: Unique event ID
+        source:
+          type: string
+          description: Event source URI
+        type:
+          type: string
+          description: Event type (e.g., task_created)
+        specversion:
+          type: string
+          example: "1.0"
+        datacontenttype:
+          type: string
+          example: application/json
+        data:
+          type: object
+          description: Event payload (TaskEvent, ReminderEvent, etc.)
+        topic:
+          type: string
+          description: Source topic
+        pubsubname:
+          type: string
+          description: Source Pub/Sub component
+
+    DaprResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [SUCCESS, RETRY, DROP]
+          description: |
+            - SUCCESS: Message processed, acknowledge
+            - RETRY: Processing failed, retry later
+            - DROP: Message invalid, don't retry
+        message:
+          type: string
+          description: Optional status message
+
+    JobCallback:
+      type: object
+      description: Dapr Jobs API callback payload
+      properties:
+        name:
+          type: string
+          description: Job name (e.g., reminder-{task_id})
+        data:
+          type: object
+          description: Custom job data
+          properties:
+            task_id:
+              type: string
+              format: uuid
+            user_id:
+              type: string
+              format: uuid
+            reminder_message:
+              type: string
+        schedule:
+          type: string
+          description: Job schedule (@once for one-time jobs)
+          example: "@once"
+        dueTime:
+          type: string
+          format: date-time
+          description: When the job was scheduled for

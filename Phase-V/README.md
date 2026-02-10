@@ -1,15 +1,17 @@
-# Full-Stack Todo Application with AI Chatbot (Phase IV)
+# Full-Stack Todo Application with AI Chatbot (Phase V)
 
-A modern, cloud-native full-stack todo application built with FastAPI backend and Next.js 16 frontend, featuring JWT authentication, SQLModel ORM, Better Auth integration, **AI-powered natural language task management**, and **Kubernetes deployment with AI-assisted DevOps**.
+A modern, cloud-native, event-driven full-stack todo application built with FastAPI backend and Next.js 16 frontend, featuring JWT authentication, SQLModel ORM, Better Auth integration, **AI-powered natural language task management**, **event-driven microservices architecture with Dapr**, and **Azure AKS cloud deployment**.
 
-## Phase IV: Kubernetes Deployment
+## Phase V: Event-Driven Cloud Architecture
 
-This phase adds cloud-native deployment capabilities:
-- **Containerization**: Production-optimized Dockerfiles for frontend and backend
-- **Kubernetes**: Local Minikube cluster for orchestration
-- **Helm Charts**: Production-grade packaging for all services
-- **AI DevOps Tools**: Gordon, kubectl-ai, and kagent for intelligent infrastructure management
-- **Local PostgreSQL**: Helm-managed database (replaces Neon for local deployment)
+This phase transforms the application into a cloud-native, event-driven system:
+
+- **Event Streaming**: Kafka via Dapr Pub/Sub (Strimzi local / Redpanda Cloud production)
+- **Microservices**: notification-service, recurring-service as event consumers
+- **Exact-Time Reminders**: Dapr Jobs API for precise reminder scheduling
+- **Cloud Deployment**: Azure AKS Free Tier with GitHub Actions CI/CD
+- **Distributed Tracing**: Zipkin integration for observability
+- **Advanced Features**: Priorities, tags, search, filter, sort, recurring tasks
 
 ## Features
 
@@ -19,30 +21,36 @@ This phase adds cloud-native deployment capabilities:
 - **Multi-User Support**: Each user has isolated data with proper security
 - **Modern Tech Stack**: FastAPI, Next.js 16, SQLModel, PostgreSQL
 
-### AI Chatbot Features (Phase III)
+### AI Chatbot Features
 - **Natural Language Processing**: Manage tasks using conversational language
 - **Floating Chat Widget**: Always-accessible chat interface on every page
 - **Intent Recognition**: Automatically understands user commands
 - **Multi-Tool Execution**: Performs complex operations in a single request
 - **Conversation History**: Maintains context across chat sessions
-- **Real-time Responses**: Instant feedback with loading indicators
-- **Tool Result Badges**: Visual confirmation of completed actions
 
-### Advanced Todo Features
-- **Priorities**: Low, Medium, High priority levels
-- **Tags**: Multi-select tagging system for organization
-- **Search**: Case-insensitive keyword search
-- **Filtering**: Filter by tags, priorities, and status
+### Advanced Todo Features (Phase V)
+- **Priorities**: Low, Medium, High priority levels with sorting
+- **Tags**: Multi-select tagging with AND intersection filtering
+- **Search**: Case-insensitive keyword search on title/description
+- **Filtering**: Combined filters (status, priority, tags, due dates)
 - **Due Dates**: Timezone-aware datetime with relative display
-- **Recurring Tasks**: Daily, weekly, monthly, yearly recurrence patterns
-- **Visual Indicators**: Status badges and due date warnings
+- **Reminders**: Exact-time notifications via Dapr Jobs API
+- **Recurring Tasks**: Daily, weekly, monthly, yearly auto-spawn on completion
+- **Pagination**: Server-side pagination with total counts
+- **Multi-Field Sorting**: Sort by multiple fields with NULLS LAST
 
-### Kubernetes Features (Phase IV)
-- **Helm Charts**: Declarative deployment configuration
-- **ConfigMaps & Secrets**: Secure configuration management
-- **PersistentVolumes**: Data durability for PostgreSQL
-- **Health Probes**: Automatic container health monitoring
-- **Rolling Updates**: Zero-downtime deployments
+### Event-Driven Features (Phase V)
+- **Task Events**: Published to Kafka on create/update/complete/delete
+- **Recurring Service**: Consumes task_completed events, spawns next instances
+- **Notification Service**: Consumes reminder_due events, sends notifications
+- **Real-Time Updates**: Task-updates topic for cross-device sync
+
+### Cloud Deployment Features
+- **Azure AKS**: Free tier Kubernetes cluster
+- **Dapr Sidecars**: Service mesh for pub/sub, secrets, and jobs
+- **Helm Charts**: Declarative deployment for all services
+- **GitHub Actions**: CI/CD pipeline with staging/production environments
+- **Zipkin Tracing**: Distributed tracing for debugging
 
 ## Tech Stack
 
@@ -51,65 +59,82 @@ This phase adds cloud-native deployment capabilities:
 - **SQLModel**: SQLAlchemy-based ORM with Pydantic integration
 - **Cohere AI**: Large Language Model for natural language processing
 - **Better Auth**: Authentication and authorization
-- **PostgreSQL**: Local database via Helm (Phase IV)
-- **Pydantic v2**: Data validation and settings management
+- **PostgreSQL**: Database via Helm chart
+- **Dapr**: Service mesh for pub/sub, secrets, jobs
 
 ### Frontend
 - **Next.js 16**: React framework with App Router
 - **TailwindCSS**: Utility-first CSS framework
-- **Framer Motion**: Animation library for smooth UI transitions
+- **TypeScript**: Type-safe development
 - **Better Auth**: Client-side authentication
-- **React Hook Form**: Form management
-- **Zod**: Schema validation
-- **Lucide React**: Icon library
 
-### Infrastructure (Phase IV)
+### Microservices
+- **notification-service**: FastAPI service consuming reminders topic
+- **recurring-service**: FastAPI service consuming task-events topic
+
+### Infrastructure
 - **Docker**: Container runtime
-- **Gordon (Docker AI)**: Intelligent Dockerfile generation
 - **Minikube**: Local Kubernetes cluster
+- **Azure AKS**: Cloud Kubernetes (Free Tier)
 - **Helm 3+**: Kubernetes package manager
-- **kubectl**: Kubernetes CLI
-- **kubectl-ai**: AI-assisted Kubernetes operations
-- **kagent**: Intelligent monitoring and optimization
-
-### AI Integration
-- **Cohere Command R**: LLM for intent extraction and response generation
-- **Custom Tool System**: Extensible tool framework for task operations
-- **Stateless Chat**: No server-side session storage, database-backed history
+- **Dapr**: Distributed application runtime
+- **Strimzi**: Kafka operator for local development
+- **Redpanda Cloud**: Managed Kafka for production
+- **GitHub Actions**: CI/CD automation
 
 ## Project Structure
 
 ```
-Phase-IV/
-├── backend/                          # FastAPI backend
+Phase-V/
+├── backend/                          # FastAPI main service
 │   ├── src/
-│   │   ├── models/                  # SQLModel database models
-│   │   ├── services/               # Business logic
+│   │   ├── models/                  # SQLModel entities
+│   │   ├── services/               # Business logic + event publishing
 │   │   ├── tools/                  # MCP-style AI tools
-│   │   ├── api/                   # API endpoints
-│   │   ├── middleware/            # Authentication middleware
+│   │   ├── api/                   # API endpoints + Dapr handlers
 │   │   └── database/             # Database configuration
-│   ├── Dockerfile                  # Backend container
-│   └── requirements.txt
+│   └── Dockerfile
 ├── frontend/                        # Next.js frontend
 │   ├── src/
 │   │   ├── app/                   # App Router pages
 │   │   ├── components/           # React components
-│   │   ├── hooks/               # Custom React hooks
-│   │   ├── types/              # TypeScript definitions
-│   │   └── lib/               # Shared utilities
-│   ├── Dockerfile              # Frontend container
-│   └── package.json
-├── charts/                         # Helm charts (Phase IV)
-│   ├── todo-frontend/            # Frontend Helm chart
-│   ├── todo-backend/             # Backend Helm chart
-│   └── postgres/                 # PostgreSQL Helm chart
-├── scripts/                        # Deployment scripts
-│   ├── minikube-setup.sh        # Minikube initialization
-│   └── deploy.sh                # Helm deployment
-├── specs/                          # Feature specifications
-├── docker-compose.yml              # Local development (non-K8s)
-└── .specify/                       # Spec-Kit configuration
+│   │   │   └── tasks/           # TaskFilters, TagSelector
+│   │   ├── hooks/               # useTasks, useRealTimeUpdates
+│   │   └── types/              # TypeScript definitions
+│   └── Dockerfile
+├── notification-service/            # Reminder consumer microservice
+│   ├── src/
+│   │   ├── main.py              # FastAPI + Dapr subscription
+│   │   ├── handlers/           # Event handlers
+│   │   └── services/          # Email/push senders
+│   └── Dockerfile
+├── recurring-service/               # Recurring task spawner
+│   ├── src/
+│   │   ├── main.py              # FastAPI + Dapr subscription
+│   │   ├── handlers/           # Task completion handler
+│   │   └── services/          # Task spawner with idempotency
+│   └── Dockerfile
+├── dapr-components/                 # Dapr configuration
+│   ├── kafka-pubsub-local.yaml    # Strimzi config
+│   ├── kafka-pubsub-cloud.yaml    # Redpanda Cloud config
+│   ├── kubernetes-secrets.yaml    # K8s secrets store
+│   ├── dapr-config.yaml          # Zipkin tracing
+│   └── strimzi/
+│       └── kafka-cluster.yaml    # KRaft mode Kafka
+├── charts/                          # Helm charts
+│   ├── todo-frontend/
+│   ├── todo-backend/
+│   ├── notification-service/
+│   ├── recurring-service/
+│   └── postgres/
+├── .github/workflows/               # CI/CD pipelines
+│   ├── ci.yaml                    # Build and test
+│   └── deploy.yaml               # Deploy to AKS
+├── scripts/
+│   ├── minikube-setup.sh         # Local cluster + Dapr + Strimzi
+│   ├── deploy-local.sh          # Local Helm deployment
+│   └── deploy-cloud.sh         # Azure AKS deployment
+└── specs/                          # Feature specifications
 ```
 
 ## Getting Started
@@ -117,496 +142,273 @@ Phase-IV/
 ### Prerequisites
 
 - Python 3.13+
-- Node.js 18+
+- Node.js 22+
 - Docker Desktop
-- Minikube
+- Minikube (local) or Azure CLI (cloud)
 - Helm 3+
 - kubectl
+- Dapr CLI
 - Cohere API Key ([Get one free](https://dashboard.cohere.com/))
 
-### Option 1: Local Development (Docker Compose)
+### Option 1: Local Development (Minikube + Dapr + Strimzi)
 
-Quick start for development without Kubernetes overhead.
+Full event-driven architecture locally.
 
-#### Environment Setup
-
-**Backend (.env)**
-```env
-DATABASE_URL=postgresql://postgres:password@localhost:5432/todo
-BETTER_AUTH_SECRET=your-secret-key-here
-COHERE_API_KEY=your-cohere-api-key-here
-FRONTEND_URL=http://localhost:3000
-PORT=8000
-```
-
-**Frontend (.env)**
-```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
-BACKEND_API_URL=http://localhost:8000
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
-DATABASE_URL=postgresql://postgres:password@localhost:5432/todo
-BETTER_AUTH_SECRET=your-secret-key-here
-```
-
-#### Quick Start
+#### Step 1: Setup Minikube with Dapr and Kafka
 
 ```bash
-# Clone and enter directory
-git clone <repository-url>
-cd Phase-IV
+# Run the setup script (installs Dapr, Strimzi, Kafka)
+./scripts/minikube-setup.sh
 
-# Generate Better Auth Secret
-openssl rand -base64 32
-
-# Start with Docker Compose
-docker-compose up -d
-
-# Access the application
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:8000
-# API Docs: http://localhost:8000/docs
+# This will:
+# - Start Minikube with 4 CPUs, 8GB RAM
+# - Install Dapr on Kubernetes
+# - Install Strimzi Kafka Operator
+# - Deploy Kafka cluster (KRaft mode)
+# - Apply Dapr components
+# - Install Zipkin for tracing
 ```
 
-### Option 2: Kubernetes Deployment (Minikube + Helm)
-
-Production-like deployment for testing and staging.
-
-#### Step 1: Start Minikube
-
-```bash
-# Start Minikube cluster
-minikube start --memory=4096 --cpus=2
-
-# Enable ingress addon (optional)
-minikube addons enable ingress
-
-# Verify cluster is running
-kubectl cluster-info
-```
-
-#### Step 2: Build Docker Images
+#### Step 2: Build and Deploy
 
 ```bash
 # Use Minikube's Docker daemon
 eval $(minikube docker-env)
 
-# Build backend image
-docker build -t todo-backend:v4.0.0 ./backend
+# Build and deploy all services
+./scripts/deploy-local.sh all
 
-# Build frontend image
-docker build -t todo-frontend:v4.0.0 ./frontend
-
-# Verify images
-docker images | grep todo
+# Or step by step:
+./scripts/deploy-local.sh build    # Build images
+./scripts/deploy-local.sh deploy   # Deploy via Helm
+./scripts/deploy-local.sh verify   # Check status
 ```
 
-#### Step 3: Deploy with Helm
+#### Step 3: Access Services
 
 ```bash
-# Create namespace
-kubectl create namespace todo-app
+# Frontend
+kubectl port-forward svc/todo-frontend 3000:3000
 
-# Deploy PostgreSQL
-helm install postgres ./charts/postgres -n todo-app
+# Backend API
+kubectl port-forward svc/todo-backend 8000:8000
 
-# Wait for PostgreSQL to be ready
-kubectl wait --for=condition=ready pod -l app=postgres -n todo-app --timeout=120s
-
-# Deploy backend (with secrets)
-helm install todo-backend ./charts/todo-backend -n todo-app \
-  --set secrets.cohereApiKey="your-cohere-key" \
-  --set secrets.betterAuthSecret="your-jwt-secret"
-
-# Deploy frontend
-helm install todo-frontend ./charts/todo-frontend -n todo-app
+# Zipkin Tracing
+kubectl port-forward svc/zipkin 9411:9411 -n dapr-system
 ```
 
-#### Step 4: Access Services
+### Option 2: Cloud Deployment (Azure AKS)
+
+Production deployment on Azure Free Tier.
+
+#### Step 1: Setup Azure AKS
 
 ```bash
-# Option A: Port forwarding
-kubectl port-forward svc/todo-frontend 3000:3000 -n todo-app &
-kubectl port-forward svc/todo-backend 8000:8000 -n todo-app &
+# Set required environment variables
+export COHERE_API_KEY=your-cohere-api-key
+export REDPANDA_SASL_PASSWORD=your-redpanda-password
 
-# Option B: Minikube service (opens browser)
-minikube service todo-frontend -n todo-app
-
-# Option C: Get NodePort URLs
-minikube service list -n todo-app
+# Run full setup (creates AKS cluster, installs Dapr)
+./scripts/deploy-cloud.sh setup
 ```
 
-## AI DevOps Tools
-
-### Gordon (Docker AI Agent)
-
-Use Gordon for intelligent container management:
+#### Step 2: Deploy Services
 
 ```bash
-# Generate optimized Dockerfile
-docker ai build --optimize ./backend
+# Deploy all services
+./scripts/deploy-cloud.sh deploy
 
-# Security vulnerability scan
-docker ai scan todo-backend:v4.0.0
-
-# Convert docker-compose to Kubernetes hints
-docker ai convert docker-compose.yml
-
-# Get Dockerfile best practices
-docker ai suggest ./backend/Dockerfile
+# Verify deployment
+./scripts/deploy-cloud.sh verify
 ```
 
-### kubectl-ai
-
-AI-assisted Kubernetes operations:
+#### Step 3: Get External IPs
 
 ```bash
-# Generate manifests from natural language
-kubectl-ai "create a deployment for fastapi with 2 replicas and 256Mi memory"
-
-# Debug pod issues
-kubectl-ai "why is my todo-backend pod in CrashLoopBackOff?"
-
-# Optimize resources
-kubectl-ai "suggest resource limits for todo-backend based on usage"
-
-# Generate network policy
-kubectl-ai "create network policy to allow only frontend to access backend"
+kubectl get svc -n production
+# Note the LoadBalancer external IPs for frontend and backend
 ```
 
-### kagent
+### Environment Variables
 
-Intelligent Kubernetes monitoring:
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `COHERE_API_KEY` | Cohere API key for AI chatbot | Yes |
+| `BETTER_AUTH_SECRET` | JWT signing secret (auto-generated if not set) | No |
+| `DATABASE_URL` | PostgreSQL connection URL | No (uses in-cluster) |
+| `REDPANDA_SASL_PASSWORD` | Redpanda Cloud SASL password | Yes (cloud only) |
+| `AKS_RESOURCE_GROUP` | Azure resource group name | No (default: todo-app-rg) |
+| `AKS_CLUSTER_NAME` | Azure AKS cluster name | No (default: todo-aks-cluster) |
+
+## Event-Driven Architecture
+
+### Kafka Topics
+
+| Topic | Publisher | Consumer | Purpose |
+|-------|-----------|----------|---------|
+| `task-events` | Backend | recurring-service | Task CRUD events |
+| `reminders` | Backend (via Jobs API) | notification-service | Reminder notifications |
+| `task-updates` | Backend | Frontend (polling) | Real-time sync |
+
+### Event Flow
+
+```
+User Action → Backend API → Dapr Pub/Sub → Kafka → Consumer Services
+
+Example: Complete Recurring Task
+1. User completes task via API
+2. Backend publishes task_completed event to task-events topic
+3. recurring-service consumes event
+4. recurring-service creates next task instance
+5. New task appears in user's list
+```
+
+### Reminder Flow
+
+```
+1. User creates task with remind_at
+2. Backend schedules Dapr Job for remind_at time
+3. At remind_at, Dapr triggers /jobs/callback
+4. Backend publishes reminder_due to reminders topic
+5. notification-service sends email/push notification
+```
+
+## CI/CD Pipeline
+
+### Triggers
+
+- **Push to develop**: Deploy to staging namespace
+- **Push to main**: Deploy to production namespace (with approval)
+- **Pull Request**: Run tests and Helm lint
+
+### GitHub Secrets Required
+
+```
+AZURE_CREDENTIALS    # Azure service principal JSON
+COHERE_API_KEY       # Cohere API key
+```
+
+### Creating Azure Credentials
 
 ```bash
-# Health check analysis
-kagent health todo-backend -n todo-app
+# Create service principal
+az ad sp create-for-rbac \
+  --name "github-actions-sp" \
+  --role contributor \
+  --scopes /subscriptions/<subscription-id>/resourceGroups/todo-app-rg \
+  --sdk-auth
 
-# Scaling recommendations
-kagent scale --analyze todo-frontend -n todo-app
-
-# Log analysis and troubleshooting
-kagent logs --diagnose todo-backend -n todo-app
-
-# Performance optimization
-kagent optimize -n todo-app
+# Copy the JSON output to GitHub Secrets as AZURE_CREDENTIALS
 ```
 
-## Helm Charts Reference
+## API Endpoints
 
-### todo-backend values.yaml
+### Tasks API
 
-```yaml
-replicaCount: 2
-
-image:
-  repository: todo-backend
-  tag: v4.0.0
-  pullPolicy: IfNotPresent
-
-service:
-  type: ClusterIP
-  port: 8000
-
-secrets:
-  databaseUrl: "postgresql://postgres:password@postgres:5432/todo"
-  cohereApiKey: ""  # Set via --set
-  betterAuthSecret: ""  # Set via --set
-
-config:
-  frontendUrl: "http://todo-frontend:3000"
-
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 100m
-    memory: 256Mi
-
-livenessProbe:
-  httpGet:
-    path: /health
-    port: 8000
-  initialDelaySeconds: 30
-
-readinessProbe:
-  httpGet:
-    path: /health
-    port: 8000
-  initialDelaySeconds: 5
+```
+GET    /api/v1/tasks              # List with search, filter, sort, pagination
+POST   /api/v1/tasks              # Create task (with tags, reminder)
+GET    /api/v1/tasks/:id          # Get single task
+PUT    /api/v1/tasks/:id          # Update task
+DELETE /api/v1/tasks/:id          # Delete task
+PATCH  /api/v1/tasks/:id/complete # Complete task (triggers events)
 ```
 
-### Helm Commands
+### Query Parameters
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `q` | string | Search keyword |
+| `status` | enum | pending, in_progress, completed |
+| `priority` | enum | low, medium, high |
+| `tags` | int[] | Tag IDs (AND filter) |
+| `due_before` | datetime | Due date upper bound |
+| `due_after` | datetime | Due date lower bound |
+| `sort_by` | string | Field(s) to sort by |
+| `sort_order` | string | asc or desc |
+| `page` | int | Page number |
+| `page_size` | int | Items per page (max 100) |
+
+### Tags API
+
+```
+GET    /api/v1/tags               # List user's tags
+POST   /api/v1/tags               # Create tag
+DELETE /api/v1/tags/:id           # Delete tag
+```
+
+### Dapr Endpoints
+
+```
+GET  /dapr/subscribe              # Subscription discovery
+POST /events/task-updates         # Task update handler
+POST /jobs/callback               # Jobs API callback
+```
+
+## Monitoring
+
+### Zipkin Tracing
 
 ```bash
-# Install chart
-helm install <release-name> ./charts/<chart-name> -n <namespace>
-
-# Upgrade release
-helm upgrade <release-name> ./charts/<chart-name> -n <namespace>
-
-# View release status
-helm status <release-name> -n <namespace>
-
-# List releases
-helm list -n <namespace>
-
-# Uninstall release
-helm uninstall <release-name> -n <namespace>
-
-# Dry-run (preview changes)
-helm install --dry-run --debug <release-name> ./charts/<chart-name>
-
-# Template rendering
-helm template <release-name> ./charts/<chart-name>
+kubectl port-forward svc/zipkin 9411:9411 -n dapr-system
+# Open http://localhost:9411
 ```
 
-## Troubleshooting
-
-### Common Issues
-
-#### Pod stuck in Pending
+### View Logs
 
 ```bash
-# Check events
-kubectl describe pod <pod-name> -n todo-app
+# Backend logs
+kubectl logs -f -l app.kubernetes.io/name=todo-backend -c todo-backend
 
-# Common causes:
-# - Insufficient resources: increase Minikube memory/CPU
-# - PVC not bound: check storage class
-kubectl get pvc -n todo-app
-kubectl get events -n todo-app --sort-by=.metadata.creationTimestamp
+# Dapr sidecar logs
+kubectl logs -f -l app.kubernetes.io/name=todo-backend -c daprd
+
+# Event consumer logs
+kubectl logs -f -l app.kubernetes.io/name=notification-service
+kubectl logs -f -l app.kubernetes.io/name=recurring-service
 ```
 
-#### Pod in CrashLoopBackOff
+### Dapr Dashboard
 
 ```bash
-# Check logs
-kubectl logs <pod-name> -n todo-app --previous
-
-# Check container status
-kubectl describe pod <pod-name> -n todo-app
-
-# Common causes:
-# - Missing environment variables
-# - Database connection failed
-# - Invalid secrets
+dapr dashboard -k
+# Open http://localhost:8080
 ```
 
-#### Cannot connect to services
+## Cleanup
+
+### Local (Minikube)
 
 ```bash
-# Verify services are running
-kubectl get svc -n todo-app
-
-# Check endpoints
-kubectl get endpoints -n todo-app
-
-# Test connectivity from another pod
-kubectl run test --rm -it --image=busybox -- wget -qO- http://todo-backend:8000/health
+./scripts/deploy-local.sh cleanup
+minikube delete
 ```
 
-#### Database connection issues
+### Cloud (Azure AKS)
 
 ```bash
-# Check PostgreSQL pod
-kubectl logs -l app=postgres -n todo-app
-
-# Verify secret is correct
-kubectl get secret todo-backend-secrets -n todo-app -o yaml
-
-# Test connection manually
-kubectl exec -it <postgres-pod> -n todo-app -- psql -U postgres -d todo
+./scripts/deploy-cloud.sh cleanup
+# Or delete entire resource group:
+az group delete --name todo-app-rg --yes --no-wait
 ```
 
-### Debugging Commands
+## Azure Free Tier Limits
 
-```bash
-# Get all resources in namespace
-kubectl get all -n todo-app
+- **AKS Control Plane**: Always free
+- **B-series VMs**: 750 hours/month free
+- **Managed Disks**: 64GB free
+- **Bandwidth**: 15GB outbound free
 
-# Describe deployment
-kubectl describe deployment todo-backend -n todo-app
-
-# View logs (follow)
-kubectl logs -f -l app=todo-backend -n todo-app
-
-# Execute shell in pod
-kubectl exec -it <pod-name> -n todo-app -- /bin/sh
-
-# Port forward for local testing
-kubectl port-forward svc/todo-backend 8000:8000 -n todo-app
-
-# View events
-kubectl get events -n todo-app --sort-by=.metadata.creationTimestamp
-
-# Resource usage
-kubectl top pods -n todo-app
-kubectl top nodes
-```
-
-### Minikube-Specific Issues
-
-```bash
-# Restart Minikube if unresponsive
-minikube stop && minikube start
-
-# Clear Minikube cache
-minikube delete && minikube start
-
-# Check Minikube status
-minikube status
-
-# SSH into Minikube VM
-minikube ssh
-
-# View Minikube dashboard
-minikube dashboard
-```
-
-## AI Chatbot Usage
-
-### Natural Language Commands
-
-The AI chatbot understands natural language and can perform various task operations:
-
-#### Creating Tasks
-- "Add a task to buy groceries"
-- "Create a new task: Call dentist tomorrow"
-- "Remind me to submit the report by Friday"
-- "Add buy milk with high priority"
-
-#### Listing Tasks
-- "Show my tasks"
-- "What's on my list?"
-- "List all my high priority tasks"
-- "Show me tasks due today"
-
-#### Completing Tasks
-- "Mark buy milk as done"
-- "Complete the groceries task"
-- "I finished the report task"
-
-#### Updating Tasks
-- "Change the title of task 5 to 'Buy vegetables'"
-- "Update task priority to high"
-- "Set due date for task 3 to tomorrow"
-
-#### Deleting Tasks
-- "Delete the buy milk task"
-- "Remove task 7"
-
-## Security
-
-- **JWT Token Authentication**: All requests require valid tokens
-- **User Data Isolation**: Users can only access their own data
-- **Kubernetes Secrets**: Sensitive data stored securely in K8s
-- **Input Validation**: Pydantic schemas for all requests
-- **SQL Injection Protection**: SQLModel ORM with parameterized queries
-- **CORS Configuration**: Controlled frontend-backend communication
-
-## Database Schema
-
-### Core Tables
-- **users**: User accounts with email and hashed passwords
-- **tasks**: Todo items with priorities, tags, due dates, recurrence
-- **tags**: Global tag definitions
-- **tasktaglink**: Many-to-many relationship for task tags
-
-### Chat Tables (Phase III)
-- **conversations**: Chat sessions per user
-- **messages**: Individual messages with role (user/assistant) and tool calls
-
-## API Documentation
-
-### Chat Endpoints
-
-#### POST /api/v1/chat
-Send a message to the AI chatbot.
-
-**Request:**
-```json
-{
-  "message": "Add a task to buy groceries",
-  "conversation_id": null
-}
-```
-
-**Response:**
-```json
-{
-  "conversation_id": 1,
-  "message": {
-    "role": "assistant",
-    "content": "I've created a task for you to buy groceries."
-  },
-  "tool_executed": true,
-  "tool_results": [
-    {
-      "tool_name": "add_task",
-      "success": true,
-      "result": "Task created successfully"
-    }
-  ]
-}
-```
-
-### Task Endpoints
-- `GET /api/v1/tasks/`: List all tasks
-- `POST /api/v1/tasks/`: Create a task
-- `GET /api/v1/tasks/{id}`: Get task details
-- `PUT /api/v1/tasks/{id}`: Update a task
-- `DELETE /api/v1/tasks/{id}`: Delete a task
-- `PATCH /api/v1/tasks/{id}/complete`: Mark as complete
-
-Full API documentation: http://localhost:8000/docs
+The default configuration uses 2x Standard_B2s nodes, which fits within free tier limits for moderate usage.
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Commit changes: `git commit -m "Add my feature"`
+4. Push to branch: `git push origin feature/my-feature`
+5. Create a Pull Request
 
 ## License
 
-This project is licensed under the MIT License.
-
-## Acknowledgments
-
-- **Cohere AI**: Natural language processing
-- **PostgreSQL**: Relational database
-- **Better Auth**: Authentication system
-- **FastAPI**: Backend framework
-- **Next.js**: Frontend framework
-- **Kubernetes**: Container orchestration
-- **Helm**: Kubernetes package manager
-- **Minikube**: Local Kubernetes cluster
-
-## Roadmap
-
-### Phase IV (Current) - Kubernetes Deployment
-- [x] Containerization with Docker
-- [x] Helm charts for all services
-- [x] Minikube local deployment
-- [x] AI DevOps tooling (Gordon, kubectl-ai, kagent)
-- [ ] CI/CD pipeline integration
-
-### Phase V - Cloud Deployment
-- Cloud Kubernetes (EKS/GKE/AKS)
-- Managed PostgreSQL
-- CDN integration
-- Auto-scaling
-
-### Phase VI - Advanced Features
-- Voice input for chat
-- Task suggestions based on patterns
-- Smart scheduling
-- Team collaboration
-
----
-
-**Built with love using AI-Assisted Development**
-
-Star this repository if you find it helpful!
+MIT License - see LICENSE file for details.

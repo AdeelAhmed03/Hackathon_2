@@ -34,7 +34,54 @@ export interface Task {
   updated_at: string;
   completed_at?: string;
   due_datetime?: string;
+  remind_at?: string;  // T056: Reminder datetime
   recurrence_rule?: RecurrenceRule;
   recurrence_parent_id?: number;
   tags?: Tag[];
+}
+
+// T056: Task creation payload
+export interface TaskCreatePayload {
+  title: string;
+  description?: string;
+  priority?: TaskPriority;
+  due_datetime?: string;
+  remind_at?: string;
+  recurrence_rule?: RecurrenceRule;
+  tag_ids?: number[];
+}
+
+// T056: Task update payload
+export interface TaskUpdatePayload {
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  due_datetime?: string;
+  remind_at?: string;
+  recurrence_rule?: RecurrenceRule;
+  tag_ids?: number[];
+}
+
+// T101: Paginated response
+export interface TaskListResponse {
+  items: Task[];
+  total_count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+// T102: Filter parameters
+export interface TaskFilters {
+  q?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  tags?: number[];
+  due_before?: string;
+  due_after?: string;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
+  page?: number;
+  page_size?: number;
 }

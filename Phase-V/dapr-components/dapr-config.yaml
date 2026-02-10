@@ -1,0 +1,54 @@
+# T140: Dapr Configuration with Zipkin Tracing
+# T170: Enhanced with mTLS for inter-service communication security
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: dapr-config
+  namespace: default
+spec:
+  # T170: Enable mTLS for secure inter-service communication
+  mtls:
+    enabled: true
+    workloadCertTTL: "24h"
+    allowedClockSkew: "15m"
+  tracing:
+    samplingRate: "1"
+    zipkin:
+      endpointAddress: "http://zipkin.dapr-system.svc.cluster.local:9411/api/v2/spans"
+  metrics:
+    enabled: true
+  logging:
+    apiLogging:
+      enabled: true
+      obfuscateURLs: false
+  features:
+    - name: Resiliency
+      enabled: true
+  # Access control policy
+  accessControl:
+    defaultAction: allow
+    trustDomain: "public"
+    policies:
+      # Backend can publish to all topics
+      - appId: backend
+        defaultAction: allow
+        trustDomain: "public"
+        namespace: "default"
+      # notification-service can only receive from reminders topic
+      - appId: notification-service
+        defaultAction: deny
+        trustDomain: "public"
+        namespace: "default"
+        operations:
+          - name: /events/reminders
+            httpVerb: ["POST"]
+            action: allow
+      # recurring-service can only receive from task-events topic
+      - appId: recurring-service
+        defaultAction: deny
+        trustDomain: "public"
+        namespace: "default"
+        operations:
+          - name: /events/task-events
+            httpVerb: ["POST"]
+            action: allow

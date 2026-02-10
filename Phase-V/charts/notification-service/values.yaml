@@ -1,0 +1,71 @@
+# T037: Notification Service Configuration Values
+replicaCount: 1
+
+image:
+  repository: notification-service
+  pullPolicy: IfNotPresent
+  tag: "v5.0.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  dapr.io/enabled: "true"
+  dapr.io/app-id: "notification-service"
+  dapr.io/app-port: "8001"
+  dapr.io/log-level: "info"
+  dapr.io/config: "dapr-config"
+
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 8001
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Environment configuration
+env:
+  PUBSUB_NAME: "kafka-pubsub"
+  # SMTP settings (from secrets)
+  SMTP_HOST: ""
+  SMTP_PORT: "587"
+  # Push notification settings (from secrets)
+  PUSH_SERVICE_URL: ""
+
+# Secrets reference
+secrets:
+  existingSecret: "todo-secrets"

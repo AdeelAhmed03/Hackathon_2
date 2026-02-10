@@ -1,0 +1,307 @@
+# Kafka Event Schemas for Phase V
+# These schemas define the structure of messages published to Kafka topics
+
+asyncapi: 2.6.0
+info:
+  title: Todo Event-Driven API
+  version: 5.0.0
+  description: |
+    Event-driven messaging for the Todo application.
+    Events are published via Dapr Pub/Sub to Kafka/Redpanda topics.
+
+servers:
+  local:
+    url: kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092
+    protocol: kafka
+    description: Local Strimzi Kafka cluster
+  cloud:
+    url: ${REDPANDA_BOOTSTRAP_SERVERS}
+    protocol: kafka
+    description: Redpanda Cloud serverless
+    security:
+      - saslScram: []
+
+channels:
+  task-events:
+    description: CRUD operations and audit trail for tasks
+    subscribe:
+      operationId: consumeTaskEvents
+      summary: Consume task lifecycle events
+      message:
+        oneOf:
+          - $ref: '#/components/messages/TaskCreated'
+          - $ref: '#/components/messages/TaskUpdated'
+          - $ref: '#/components/messages/TaskCompleted'
+          - $ref: '#/components/messages/TaskDeleted'
+    publish:
+      operationId: publishTaskEvent
+      summary: Publish task lifecycle events
+      message:
+        oneOf:
+          - $ref: '#/components/messages/TaskCreated'
+          - $ref: '#/components/messages/TaskUpdated'
+          - $ref: '#/components/messages/TaskCompleted'
+          - $ref: '#/components/messages/TaskDeleted'
+
+  reminders:
+    description: Due date and reminder notifications
+    subscribe:
+      operationId: consumeReminders
+      summary: Consume reminder events
+      message:
+        $ref: '#/components/messages/ReminderDue'
+    publish:
+      operationId: publishReminder
+      summary: Publish reminder events
+      message:
+        $ref: '#/components/messages/ReminderDue'
+
+  task-updates:
+    description: Real-time sync events for connected clients (future)
+    subscribe:
+      operationId: consumeTaskUpdates
+      summary: Consume task update events for real-time sync
+      message:
+        $ref: '#/components/messages/TaskUpdateSync'
+    publish:
+      operationId: publishTaskUpdate
+      summary: Publish task update events for real-time sync
+      message:
+        $ref: '#/components/messages/TaskUpdateSync'
+
+components:
+  securitySchemes:
+    saslScram:
+      type: scramSha256
+      description: SASL/SCRAM-SHA-256 authentication for Redpanda Cloud
+
+  messages:
+    TaskCreated:
+      name: TaskCreated
+      title: Task Created Event
+      summary: Published when a new task is created
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TaskEvent'
+      examples:
+        - name: Basic task creation
+          payload:
+            event_type: task_created
+            task_id: "550e8400-e29b-41d4-a716-446655440000"
+            task_data:
+              title: "Buy groceries"
+              description: "Milk, bread, eggs"
+              status: "pending"
+              priority: "medium"
+              tags: ["shopping", "errands"]
+              due_at: "2026-02-15T10:00:00Z"
+              remind_at: "2026-02-15T09:00:00Z"
+              recurring_interval: "weekly"
+            user_id: "123e4567-e89b-12d3-a456-426614174000"
+            timestamp: "2026-02-09T12:00:00Z"
+            metadata:
+              source: "api"
+              correlation_id: "req-abc123"
+
+    TaskUpdated:
+      name: TaskUpdated
+      title: Task Updated Event
+      summary: Published when a task is modified
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TaskEvent'
+
+    TaskCompleted:
+      name: TaskCompleted
+      title: Task Completed Event
+      summary: Published when a task is marked as completed
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TaskEvent'
+      examples:
+        - name: Completing a recurring task
+          payload:
+            event_type: task_completed
+            task_id: "550e8400-e29b-41d4-a716-446655440000"
+            task_data:
+              title: "Buy groceries"
+              status: "completed"
+              priority: "medium"
+              recurring_interval: "weekly"
+            user_id: "123e4567-e89b-12d3-a456-426614174000"
+            timestamp: "2026-02-15T11:30:00Z"
+
+    TaskDeleted:
+      name: TaskDeleted
+      title: Task Deleted Event
+      summary: Published when a task is deleted
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TaskEvent'
+
+    ReminderDue:
+      name: ReminderDue
+      title: Reminder Due Event
+      summary: Published when a task reminder is due
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ReminderEvent'
+      examples:
+        - name: Reminder notification
+          payload:
+            event_type: reminder_due
+            task_id: "550e8400-e29b-41d4-a716-446655440000"
+            user_id: "123e4567-e89b-12d3-a456-426614174000"
+            reminder_message: "Task 'Buy groceries' is due in 1 hour"
+            task_title: "Buy groceries"
+            due_at: "2026-02-15T10:00:00Z"
+            timestamp: "2026-02-15T09:00:00Z"
+
+    TaskUpdateSync:
+      name: TaskUpdateSync
+      title: Task Update Sync Event
+      summary: Published for real-time client synchronization
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TaskSyncEvent'
+
+  schemas:
+    TaskEvent:
+      type: object
+      required:
+        - event_type
+        - task_id
+        - user_id
+        - timestamp
+      properties:
+        event_type:
+          type: string
+          enum:
+            - task_created
+            - task_updated
+            - task_completed
+            - task_deleted
+          description: Type of task lifecycle event
+        task_id:
+          type: string
+          format: uuid
+          description: Unique identifier of the task
+        task_data:
+          $ref: '#/components/schemas/TaskData'
+        user_id:
+          type: string
+          format: uuid
+          description: Owner of the task (for multi-tenant isolation)
+        timestamp:
+          type: string
+          format: date-time
+          description: When the event occurred (ISO8601 UTC)
+        metadata:
+          type: object
+          properties:
+            source:
+              type: string
+              description: Origin of the event (api, chat, scheduler)
+            correlation_id:
+              type: string
+              description: Request correlation ID for tracing
+            version:
+              type: string
+              description: Schema version
+
+    TaskData:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, completed]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        tags:
+          type: array
+          items:
+            type: string
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+        remind_at:
+          type: string
+          format: date-time
+          nullable: true
+        recurring_interval:
+          type: string
+          enum: [daily, weekly, monthly, yearly]
+          nullable: true
+        parent_task_id:
+          type: string
+          format: uuid
+          nullable: true
+
+    ReminderEvent:
+      type: object
+      required:
+        - event_type
+        - task_id
+        - user_id
+        - timestamp
+      properties:
+        event_type:
+          type: string
+          const: reminder_due
+        task_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        reminder_message:
+          type: string
+          description: Human-readable reminder message
+        task_title:
+          type: string
+          description: Title of the task for notification
+        due_at:
+          type: string
+          format: date-time
+          description: When the task is due
+        timestamp:
+          type: string
+          format: date-time
+
+    TaskSyncEvent:
+      type: object
+      required:
+        - event_type
+        - task_id
+        - user_id
+        - timestamp
+      properties:
+        event_type:
+          type: string
+          enum:
+            - task_created
+            - task_updated
+            - task_completed
+            - task_deleted
+        task_id:
+          type: string
+          format: uuid
+        task_data:
+          $ref: '#/components/schemas/TaskData'
+        user_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        sync_type:
+          type: string
+          enum: [full, partial]
+          description: Whether this is a full task snapshot or partial update

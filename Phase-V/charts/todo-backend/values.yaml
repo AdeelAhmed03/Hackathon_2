@@ -1,5 +1,5 @@
 # Todo Backend Helm Chart Values
-# For local Kubernetes deployment (Phase IV)
+# T033: Updated for Phase V with Dapr integration
 
 # Replica configuration
 replicaCount: 2
@@ -7,8 +7,16 @@ replicaCount: 2
 # Container image
 image:
   repository: todo-backend
-  tag: v4.0.0
+  tag: v5.0.0
   pullPolicy: IfNotPresent
+
+# Dapr configuration (T033)
+dapr:
+  enabled: true
+  appId: "todo-backend"
+  appPort: 8000
+  logLevel: "info"
+  config: "dapr-config"
 
 # Service configuration
 service:
@@ -72,8 +80,13 @@ ingress:
         - path: /api
           pathType: Prefix
 
-# Pod annotations
-podAnnotations: {}
+# Pod annotations - Dapr sidecar injection (T033)
+podAnnotations:
+  dapr.io/enabled: "true"
+  dapr.io/app-id: "todo-backend"
+  dapr.io/app-port: "8000"
+  dapr.io/log-level: "info"
+  dapr.io/config: "dapr-config"
 
 # Node selector
 nodeSelector: {}

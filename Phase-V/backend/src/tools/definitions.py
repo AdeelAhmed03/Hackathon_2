@@ -32,6 +32,11 @@ ADD_TASK_TOOL = {
             "type": "str",
             "required": False
         },
+        "remind_at": {
+            "description": "Reminder date and time in ISO format (must be before due_datetime)",
+            "type": "str",
+            "required": False
+        },
         "tag_names": {
             "description": "List of tag names to attach to the task (e.g., ['work', 'urgent'])",
             "type": "str",

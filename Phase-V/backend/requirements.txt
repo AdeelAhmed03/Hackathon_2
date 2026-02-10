@@ -1,14 +1,13 @@
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-sqlmodel>=0.0.12
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+sqlmodel>=0.0.14
 alembic>=1.13.0
-psycopg[binary]>=3.1.0
-python-jose[cryptography]>=3.3.0
+psycopg2-binary>=2.9.9
+python-jose[cryptography]
 passlib[bcrypt]>=1.7.4
 python-multipart>=0.0.6
 python-dotenv>=1.0.0
-httpx>=0.25.0
-pydantic-settings>=2.0.0
-python-dateutil>=2.8.0
-# Note: Using psycopg[binary] instead of psycopg2-binary for Python 3.13 compatibility
-cohere==5.5.8
+httpx>=0.26.0
+pydantic-settings>=2.1.0
+python-dateutil>=2.8.2
+cohere
