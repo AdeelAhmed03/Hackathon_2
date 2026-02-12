@@ -156,7 +156,21 @@
       "Bash(powershell.exe:*)",
       "Bash(az login:*)",
       "mcp__MCP_DOCKER__mcp-find",
-      "mcp__MCP_DOCKER__mcp-add"
+      "mcp__MCP_DOCKER__mcp-add",
+      "Bash(dapr version:*)",
+      "Bash(__NEW_LINE_d36583bfc5107865__ echo \"=== TEST 3: Create Task ===\")",
+      "Bash(__NEW_LINE_28b25359e00a48d3__ echo \"=== SECTION 1: SERVICE HEALTH CHECKS ===\")",
+      "Bash(python3:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_select_option",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_console_messages"
     ]
   },
   "enabledPlugins": {

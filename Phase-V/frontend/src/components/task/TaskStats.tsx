@@ -31,7 +31,9 @@ export default function TaskStats() {
       });
 
       if (response.ok) {
-        const tasks: Task[] = await response.json();
+        const data = await response.json();
+        // Handle paginated response from backend
+        const tasks: Task[] = data.items || data;
 
         const total = tasks.length;
         const completed = tasks.filter(t => t.status === 'completed').length;

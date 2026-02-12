@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useNotification } from '@/contexts/NotificationContext';
-import { Task, TaskPriority, TaskStatus } from '@/types/task';
+import { Task, TaskPriority, TaskStatus, RecurrenceRule } from '@/types/task';
 import { Button } from '@/components/ui/button';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X, Edit, Trash2, Calendar, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Check, X, Edit, Trash2, Calendar, Clock, Repeat, Bell, Tag } from 'lucide-react';
 
 interface TaskItemProps {
   task: Task;
@@ -22,6 +22,9 @@ export default function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
   const [description, setDescription] = useState(task.description || '');
   const [priority, setPriority] = useState(task.priority);
   const [status, setStatus] = useState(task.status);
+  const [dueDate, setDueDate] = useState(task.due_datetime ? task.due_datetime.slice(0, 16) : '');
+  const [remindAt, setRemindAt] = useState(task.remind_at ? task.remind_at.slice(0, 16) : '');
+  const [recurrenceRule, setRecurrenceRule] = useState<RecurrenceRule | ''>(task.recurrence_rule || '');
 
   const getPriorityColor = (p: TaskPriority) => {
     switch (p) {
@@ -41,20 +44,45 @@ export default function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
     }
   };
 
+  const formatRelativeDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = date.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return `${Math.abs(diffDays)}d overdue`;
+    if (diffDays === 0) return 'Due today';
+    if (diffDays === 1) return 'Due tomorrow';
+    if (diffDays <= 7) return `Due in ${diffDays}d`;
+    return date.toLocaleDateString();
+  };
+
+  const isDueOverdue = (dateStr: string) => {
+    return new Date(dateStr) < new Date();
+  };
+
   const handleSave = async () => {
     try {
+      const payload: Record<string, unknown> = {
+        title,
+        description,
+        status,
+        priority,
+      };
+
+      if (dueDate) payload.due_datetime = new Date(dueDate).toISOString();
+      else payload.due_datetime = null;
+      if (remindAt) payload.remind_at = new Date(remindAt).toISOString();
+      else payload.remind_at = null;
+      payload.recurrence_rule = recurrenceRule || null;
+
       const response = await fetch(`/api/tasks/${task.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${session?.token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title,
-          description,
-          status,
-          priority,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -131,7 +159,6 @@ export default function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
     >
       {isEditing ? (
         <div className="space-y-4">
-           {/* Edit Mode */}
           <div>
             <label className="block text-sm font-medium mb-1">Title</label>
             <input
@@ -150,8 +177,8 @@ export default function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
               className="input-field min-h-[80px]"
             />
           </div>
-          <div className="flex gap-4">
-            <div className="flex-1">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <label className="block text-sm font-medium mb-1">Priority</label>
               <select
                 value={priority}
@@ -163,7 +190,7 @@ export default function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
                 <option value={TaskPriority.HIGH}>High</option>
               </select>
             </div>
-            <div className="flex-1">
+            <div>
               <label className="block text-sm font-medium mb-1">Status</label>
               <select
                 value={status}
@@ -176,6 +203,40 @@ export default function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
               </select>
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Due Date</label>
+              <input
+                type="datetime-local"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Remind At</label>
+              <input
+                type="datetime-local"
+                value={remindAt}
+                onChange={(e) => setRemindAt(e.target.value)}
+                className="input-field"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Recurring</label>
+            <select
+              value={recurrenceRule}
+              onChange={(e) => setRecurrenceRule(e.target.value as RecurrenceRule | '')}
+              className="input-field"
+            >
+              <option value="">None</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
               Cancel
@@ -186,7 +247,6 @@ export default function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
           </div>
         </div>
       ) : (
-        /* View Mode */
         <div className="flex items-start gap-4">
           <div className="pt-1">
             <motion.button
@@ -221,13 +281,57 @@ export default function TaskItem({ task, onUpdate, onDelete }: TaskItemProps) {
               {task.description}
             </p>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
+            {/* Tags */}
+            {task.tags && task.tags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {task.tags.map(tag => (
+                  <span
+                    key={tag.id}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
+                  >
+                    <Tag className="h-3 w-3" />
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityColor(task.priority)}`}>
-                 {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
+                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
               </span>
               <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(task.status)}`}>
                 {task.status.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
               </span>
+
+              {/* Due Date */}
+              {task.due_datetime && (
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                  isDueOverdue(task.due_datetime) && task.status !== TaskStatus.COMPLETED
+                    ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                    : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
+                }`}>
+                  <Clock className="h-3 w-3" />
+                  {formatRelativeDate(task.due_datetime)}
+                </span>
+              )}
+
+              {/* Recurring Badge */}
+              {task.recurrence_rule && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                  <Repeat className="h-3 w-3" />
+                  {task.recurrence_rule.charAt(0).toUpperCase() + task.recurrence_rule.slice(1)}
+                </span>
+              )}
+
+              {/* Reminder Badge */}
+              {task.remind_at && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                  <Bell className="h-3 w-3" />
+                  Reminder
+                </span>
+              )}
+
               <span className="text-xs text-muted-foreground flex items-center gap-1 ml-auto">
                 <Calendar className="h-3 w-3" />
                 {new Date(task.updated_at || task.created_at).toLocaleDateString()}

@@ -1,41 +1,52 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useNotification } from '@/contexts/NotificationContext';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
 import { Task, TaskPriority, TaskStatus } from '@/types/task';
 import { Button } from '@/components/ui/button';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Search, ArrowUpDown } from 'lucide-react';
 
 export default function TaskList() {
   const { session } = useAuth();
   const { showNotification } = useNotification();
+  const notifyRef = useRef(showNotification);
+  notifyRef.current = showNotification;
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+
+  // Filter & search state
+  const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | TaskStatus>('all');
   const [priorityFilter, setPriorityFilter] = useState<'all' | TaskPriority>('all');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
 
-  // Filter tasks based on selected filters
-  const filteredTasks = tasks.filter(task => {
-    const statusMatch = statusFilter === 'all' || task.status === statusFilter;
-    const priorityMatch = priorityFilter === 'all' || task.priority === priorityFilter;
-    return statusMatch && priorityMatch;
-  });
-
-  // Fetch tasks for the current user
+  // Debounce search input
   useEffect(() => {
-    if (session?.user?.id) {
-      fetchTasks();
-    }
-  }, [session]);
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  const fetchTasks = async () => {
+  // Fetch tasks with server-side params
+  const fetchTasks = useCallback(async () => {
+    if (!session?.user?.id) return;
     try {
       setLoading(true);
-      const response = await fetch(`/api/tasks`, {
+      const params = new URLSearchParams();
+      if (debouncedQuery) params.set('q', debouncedQuery);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (priorityFilter !== 'all') params.set('priority', priorityFilter);
+      params.set('sort_by', sortBy);
+      params.set('sort_order', sortOrder);
+      params.set('page_size', '100');
+
+      const qs = params.toString();
+      const response = await fetch(`/api/tasks${qs ? `?${qs}` : ''}`, {
         headers: {
           'Authorization': `Bearer ${session?.token}`,
           'Content-Type': 'application/json',
@@ -44,18 +55,22 @@ export default function TaskList() {
 
       if (response.ok) {
         const data = await response.json();
-        setTasks(data);
+        setTasks(data.items || data);
       } else {
         const error = await response.json();
-        showNotification(`Failed to load tasks: ${error.detail || 'Unknown error'}`, 'error');
+        notifyRef.current(`Failed to load tasks: ${error.detail || 'Unknown error'}`, 'error');
       }
     } catch (error) {
       console.error('Error fetching tasks:', error);
-      showNotification('Error loading tasks', 'error');
+      notifyRef.current('Error loading tasks', 'error');
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.user?.id, session?.token, debouncedQuery, statusFilter, priorityFilter, sortBy, sortOrder]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   const handleTaskCreated = (newTask: Task) => {
     setTasks(prev => [newTask, ...prev]);
@@ -73,7 +88,7 @@ export default function TaskList() {
     showNotification('Task deleted successfully!', 'success');
   };
 
-  if (loading) {
+  if (loading && tasks.length === 0) {
     return (
       <div className="text-center py-8">
         <p>Loading tasks...</p>
@@ -87,7 +102,7 @@ export default function TaskList() {
         <h2 className="text-lg font-semibold flex items-center gap-2">
           Your Tasks
           <span className="text-xs font-normal text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-            {filteredTasks.length}
+            {tasks.length}
           </span>
         </h2>
         <Button
@@ -108,13 +123,26 @@ export default function TaskList() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-4 bg-secondary/50 p-4 rounded-lg mb-6 border border-border">
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search tasks..."
+          className="input-field pl-10 w-full"
+        />
+      </div>
+
+      {/* Filters & Sort */}
+      <div className="flex flex-wrap gap-3 bg-secondary/50 p-3 rounded-lg border border-border">
         <div className="flex items-center space-x-2">
           <label className="text-sm font-medium text-foreground">Status:</label>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="text-sm p-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+            onChange={(e) => setStatusFilter(e.target.value as 'all' | TaskStatus)}
+            className="text-sm p-1.5 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
           >
             <option value="all">All</option>
             <option value="pending">Pending</option>
@@ -127,13 +155,33 @@ export default function TaskList() {
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value as 'all' | TaskPriority)}
-            className="text-sm p-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+            className="text-sm p-1.5 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
           >
             <option value="all">All</option>
             <option value="low">Low</option>
             <option value="medium">Medium</option>
             <option value="high">High</option>
           </select>
+        </div>
+        <div className="flex items-center space-x-2">
+          <label className="text-sm font-medium text-foreground">Sort:</label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="text-sm p-1.5 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+          >
+            <option value="created_at">Date Created</option>
+            <option value="due_datetime">Due Date</option>
+            <option value="priority">Priority</option>
+            <option value="title">Title</option>
+          </select>
+          <button
+            onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+            className="p-1.5 border border-input rounded-md bg-background hover:bg-secondary transition-colors"
+            title={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
+          >
+            <ArrowUpDown className="h-4 w-4 text-foreground" />
+          </button>
         </div>
       </div>
 
@@ -144,13 +192,15 @@ export default function TaskList() {
         />
       )}
 
-      {filteredTasks.length === 0 ? (
+      {tasks.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          {tasks.length === 0 ? 'No tasks yet. Create your first task!' : 'No tasks match your filters.'}
+          {debouncedQuery || statusFilter !== 'all' || priorityFilter !== 'all'
+            ? 'No tasks match your filters.'
+            : 'No tasks yet. Create your first task!'}
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredTasks.map(task => (
+          {tasks.map(task => (
             <TaskItem
               key={task.id}
               task={task}

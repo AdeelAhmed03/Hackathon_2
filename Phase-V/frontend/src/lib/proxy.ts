@@ -4,8 +4,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-// Backend API URL - use BACKEND_API_URL or fall back to NEXT_PUBLIC_API_BASE_URL
-const BACKEND_API_URL = process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'https://adeelahmed01-todo-chatbot.hf.space';
+// Backend API URL - use BACKEND_API_URL for server-side requests
+const BACKEND_API_URL = process.env.BACKEND_API_URL || 'http://backend:8000';
 
 /**
  * Generic proxy handler for forwarding requests to the FastAPI backend
@@ -19,11 +19,14 @@ export async function proxyRequest(
     const authHeader = req.headers.get('authorization');
 
     // Forward the request to the backend with proper API version prefix
-    const backendUrl = `${BACKEND_API_URL}/api/v1${path}`;
+    // Preserve query parameters from the original request
+    const queryString = req.nextUrl.search;
+    const backendUrl = `${BACKEND_API_URL}/api/v1${path}${queryString}`;
 
     // Prepare headers
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'Connection': 'close',
     };
 
     // Add authorization header if present
@@ -62,8 +65,8 @@ export async function proxyRequest(
   } catch (error) {
     console.error('Proxy error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { detail: 'Backend connection error. Please try again.' },
+      { status: 502 }
     );
   }
 }

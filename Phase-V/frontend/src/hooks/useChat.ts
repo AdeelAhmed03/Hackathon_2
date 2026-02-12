@@ -11,7 +11,7 @@ import {
   ConversationDetail,
 } from '@/types/chat';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://adeelahmed01-todo-chatbot.hf.space';
+// Use frontend proxy to communicate with backend
 
 interface UseChatReturn extends ChatState, ChatActions {}
 
@@ -63,7 +63,7 @@ export function useChat(): UseChatReturn {
         conversationId: conversationId,
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/chat`, {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -125,7 +125,7 @@ export function useChat(): UseChatReturn {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/v1/chat/conversations/${convId}`,
+        `/api/chat/conversations/${convId}`,
         {
           headers: {
             'Authorization': `Bearer ${session.token}`,
