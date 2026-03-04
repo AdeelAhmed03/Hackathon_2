@@ -2,7 +2,7 @@
 # T033: Updated for Phase V with Dapr integration
 
 # Replica configuration
-replicaCount: 2
+replicaCount: 1
 
 # Container image
 image:
@@ -20,7 +20,7 @@ dapr:
 
 # Service configuration
 service:
-  type: ClusterIP
+  type: LoadBalancer
   port: 8000
 
 # Secret values (set via --set, never commit real values)

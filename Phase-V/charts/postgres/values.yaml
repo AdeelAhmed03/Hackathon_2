@@ -24,8 +24,8 @@ secrets:
 # Persistent storage
 persistence:
   enabled: true
-  storageClass: "standard"   # Minikube default StorageClass
-  size: 1Gi
+  storageClass: "managed-csi"   # Azure AKS StorageClass
+  size: 5Gi
   accessModes:
     - ReadWriteOnce
 

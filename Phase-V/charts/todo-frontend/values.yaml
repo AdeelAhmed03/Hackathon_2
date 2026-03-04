@@ -1,24 +1,30 @@
 # Todo Frontend Helm Chart Values
-# For local Kubernetes deployment (Phase IV)
+# Phase V: Cloud-ready configuration
 
 # Replica configuration
-replicaCount: 2
+replicaCount: 1
 
 # Container image
 image:
   repository: todo-frontend
-  tag: v4.0.0
+  tag: v5.0.0
   pullPolicy: IfNotPresent
 
 # Service configuration
 service:
-  type: ClusterIP
+  type: LoadBalancer
   port: 3000
+
+# Secret values (set via --set, never commit real values)
+secrets:
+  databaseUrl: ""           # REQUIRED: Set via --set secrets.databaseUrl=xxx
+  betterAuthSecret: ""      # REQUIRED: Set via --set secrets.betterAuthSecret=xxx
 
 # Non-sensitive configuration
 config:
   apiBaseUrl: "http://todo-backend:8000"
-  baseUrl: "http://localhost:3000"
+  backendApiUrl: "http://todo-backend:8000"
+  baseUrl: ""  # Set dynamically via LoadBalancer IP
 
 # Resource limits
 resources:

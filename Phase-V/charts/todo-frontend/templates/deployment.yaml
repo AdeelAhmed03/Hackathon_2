@@ -30,6 +30,8 @@ spec:
               containerPort: 3000
               protocol: TCP
           envFrom:
+            - secretRef:
+                name: {{ include "todo-frontend.fullname" . }}-secrets
             - configMapRef:
                 name: {{ include "todo-frontend.fullname" . }}-config
           {{- if .Values.livenessProbe.enabled }}

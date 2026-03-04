@@ -141,15 +141,10 @@ create_redpanda_secrets() {
     log_info "Creating Redpanda Cloud secrets..."
 
     if [ -z "$REDPANDA_SASL_PASSWORD" ]; then
-        log_error "REDPANDA_SASL_PASSWORD environment variable not set"
-        echo ""
-        echo "To get Redpanda Cloud credentials:"
-        echo "  1. Go to https://cloud.redpanda.com"
-        echo "  2. Create a free serverless cluster"
-        echo "  3. Create SASL credentials"
-        echo "  4. export REDPANDA_SASL_PASSWORD=<your-password>"
-        echo "  5. Update dapr-components/kafka-pubsub-cloud.yaml with bootstrap servers"
-        exit 1
+        log_warn "REDPANDA_SASL_PASSWORD not set, skipping Redpanda secrets"
+        log_warn "Kafka/Redpanda event streaming will not be available"
+        log_warn "Set REDPANDA_SASL_PASSWORD to enable event-driven features"
+        return 0
     fi
 
     kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
@@ -168,11 +163,17 @@ apply_dapr_components() {
 
     kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 
-    kubectl apply -f dapr-components/kafka-pubsub-cloud.yaml -n $NAMESPACE
+    # Apply Kafka pubsub only if Redpanda is configured
+    if [ -n "$REDPANDA_SASL_PASSWORD" ]; then
+        kubectl apply -f dapr-components/kafka-pubsub-cloud.yaml -n $NAMESPACE
+    else
+        log_warn "Skipping Kafka pubsub component (Redpanda not configured)"
+    fi
+
     kubectl apply -f dapr-components/kubernetes-secrets.yaml -n $NAMESPACE
     kubectl apply -f dapr-components/dapr-config.yaml -n $NAMESPACE
 
-    kubectl get component -n $NAMESPACE
+    kubectl get component -n $NAMESPACE 2>/dev/null || true
     log_info "Dapr components applied"
 }
 
@@ -231,6 +232,11 @@ deploy_services() {
         --namespace $NAMESPACE \
         --set image.repository="$image_prefix/todo-backend" \
         --set image.tag=$VERSION \
+        --set secrets.cohereApiKey="$COHERE_API_KEY" \
+        --set secrets.betterAuthSecret="$BETTER_AUTH_SECRET" \
+        --set secrets.databaseUrl="$DATABASE_URL" \
+        --set service.type=LoadBalancer \
+        --set replicaCount=1 \
         --set resources.requests.memory=128Mi \
         --set resources.requests.cpu=50m \
         --wait --timeout 5m
@@ -241,6 +247,7 @@ deploy_services() {
         --namespace $NAMESPACE \
         --set image.repository="$image_prefix/notification-service" \
         --set image.tag=$VERSION \
+        --set replicaCount=1 \
         --set resources.requests.memory=64Mi \
         --set resources.requests.cpu=25m \
         --wait --timeout 5m
@@ -251,6 +258,7 @@ deploy_services() {
         --namespace $NAMESPACE \
         --set image.repository="$image_prefix/recurring-service" \
         --set image.tag=$VERSION \
+        --set replicaCount=1 \
         --set resources.requests.memory=64Mi \
         --set resources.requests.cpu=25m \
         --wait --timeout 5m
@@ -261,6 +269,11 @@ deploy_services() {
         --namespace $NAMESPACE \
         --set image.repository="$image_prefix/todo-frontend" \
         --set image.tag=$VERSION \
+        --set secrets.databaseUrl="$DATABASE_URL" \
+        --set secrets.betterAuthSecret="$BETTER_AUTH_SECRET" \
+        --set config.backendApiUrl="http://todo-backend:8000" \
+        --set service.type=LoadBalancer \
+        --set replicaCount=1 \
         --set resources.requests.memory=128Mi \
         --set resources.requests.cpu=50m \
         --wait --timeout 5m
